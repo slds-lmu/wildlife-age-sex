@@ -9,6 +9,7 @@ def preprocess_data(
     confidence_threshold: float = 0.95,
     cropping_mode: Literal["pad", "shift", None] = "shift",
     **kwargs,
+    # TODO: augmentations
 ) -> pd.DataFrame:
     """
     Preprocess the data.

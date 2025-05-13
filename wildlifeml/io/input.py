@@ -125,12 +125,17 @@ class ModelFactory:
         model.add(model_cls(weights=weights, include_top=include_top, pooling=pooling))
         model.add(Dense(num_classes, activation="softmax"))
 
+        # Freeze all layers from backbone model
+        for layer in model.get_layer(model_id).layers:
+            layer.trainable = False
+
         return model
 
 
-def load_backbone_model(model: str | Path, num_classes: int = 2) -> tf.keras.Model:
+def load_backbone_model(model: str | Path, num_classes: int = 2) -> Sequential:
     """
-    Load a backbone model from a string identifier or path.
+    Load a backbone model from a string identifier or path. By default, all but the final
+    layer are frozen.
 
     Args:
     -----
@@ -154,7 +159,18 @@ def load_backbone_model(model: str | Path, num_classes: int = 2) -> tf.keras.Mod
         )
     else:
         try:
-            return tf.keras.models.load_model(model)
+            backbone_model = tf.keras.models.load_model(model)
+            # Check if the model has the right output layer
+            if not backbone_model.layers[-1].output_shape[1] == num_classes:
+                # add dense layer with softmax
+                logging.info(
+                    f"Adding dense layer with {num_classes} classes to the backbonemodel."
+                )
+                backbone_model.add(Dense(num_classes, activation="softmax"))
+            # Freeze all but the last layer
+            for layer in backbone_model.layers[:-1]:
+                layer.trainable = False
+            return backbone_model
         except FileNotFoundError as e:
             raise ValueError(
                 f"""
