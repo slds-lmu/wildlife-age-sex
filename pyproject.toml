@@ -36,7 +36,7 @@ packages = ["wildlifeml"]
 line-length = 99
 target-version = "py310"
 lint.select = ["E", "F", "I", "N", "W", "B", "UP", "PL", "RUF"]
-lint.ignore = ["PLR2004"]
+lint.ignore = ["PLR2004", "PLR0913"]
 
 [tool.ruff.format]
 quote-style = "double"
