@@ -2,12 +2,14 @@ from typing import Literal
 
 import numpy as np
 import pandas as pd
+import cv2
 
 
 def preprocess_data(
     data: pd.DataFrame,
     confidence_threshold: float = 0.95,
     cropping_mode: Literal["pad", "shift", None] = "shift",
+    rescale_to: tuple[int, int] | None = (224, 224),
     **kwargs,
     # TODO: augmentations
 ) -> pd.DataFrame:
@@ -38,6 +40,9 @@ def preprocess_data(
             Otherwise, pad.
         If None, return the uncropped image.
 
+    rescale_to: tuple[int, int]
+        Target size for image resizing. 224 x 224 is recommended.
+
     Yields:
     -------
     tuple(pd.DataFrame, pd.DataFrame)
@@ -59,6 +64,10 @@ def preprocess_data(
             else None,
             axis=1,
         )
+
+    if rescale_to is not None:
+        preprocessed_data["image"] = rescale_images(preprocessed_data["image"], rescale_to)
+
     return preprocessed_data
 
 
@@ -243,3 +252,10 @@ def _crop_image(
     else:
         # Fall back to original padding method
         return _crop_and_pad_image(image, x_coords, y_coords)
+
+
+def rescale_images(images: list[np.ndarray], rescale_to: tuple[int, int]) -> list[np.ndarray]:
+    """
+    Rescale images to a 224 x 224 square.
+    """
+    return [cv2.resize(image, rescale_to) if image is not None else None for image in images]

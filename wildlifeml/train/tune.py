@@ -1,5 +1,6 @@
 from typing import Literal
 import logging
+import numpy as np
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -7,14 +8,23 @@ from tensorflow.keras.optimizers import Adam, SGD, Optimizer
 from tensorflow.keras.losses import BinaryCrossentropy, SparseCategoricalCrossentropy, Loss
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
+# Configure all GPUs to use memory growth
 gpus = tf.config.experimental.list_physical_devices("GPU")
-if len(gpus) > 0:
-    tf.config.experimental.set_memory_growth(gpus[0], True)
+if gpus:
+    try:
+        # Set memory growth for all GPUs
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+        logging.info(f"Found {len(gpus)} GPU(s). Memory growth enabled.")
+    except RuntimeError as e:
+        logging.error(f"GPU configuration error: {e}")
 
 
 def tune_model(
     model,
     train_data,
+    target_column: str,
+    num_classes: int,
     batch_size: int,
     loss_function: Literal[
         "binary_crossentropy", "categorical_crossentropy"
@@ -31,8 +41,25 @@ def tune_model(
     finetune_patience: int = 10,
     num_workers: int = 0,
     eval_metrics: list | None = None,
+    **kwargs,
 ):
     # Postprocess inputs
+
+    # Convert images to numpy array
+    if (num_missing_images := len(train_data["image"].isna())) > 0:
+        logging.warning(
+            f"Found {num_missing_images} missing images. Continuing with {len(train_data)} images."
+        )
+        train_data = train_data[train_data["image"].notna()]
+    inputs = np.stack(train_data["image"].values).astype(np.float32)  # Convert to float32
+
+    # Get labels and convert to numeric indices
+    assert (
+        target_column in train_data.columns
+    ), f"Target column {target_column} not found in train_data"
+    # Get unique categories and create mapping
+    labels = convert_to_numeric_indices(train_data[target_column], num_classes)
+
     loss_function = (
         BinaryCrossentropy()
         if loss_function == "binary_crossentropy"
@@ -78,7 +105,8 @@ def tune_model(
     if transfer_epochs > 0:
         model = do_transfer_learning(
             model,
-            train_data,
+            inputs,
+            labels,
             transfer_optimizer,
             loss_function,
             transfer_epochs,
@@ -91,7 +119,8 @@ def tune_model(
     if finetune_epochs > 0 and finetune_layers > 0:
         model = do_finetuning(
             model,
-            train_data,
+            inputs,
+            labels,
             finetune_optimizer,
             loss_function,
             finetune_epochs,
@@ -102,12 +131,29 @@ def tune_model(
             num_workers,
         )
 
-    pass
+    return (model, "THIS IS A TEST MODEL SPEC")
+
+
+def convert_to_numeric_indices(targets: np.ndarray, num_classes: int) -> np.ndarray:
+    categories = targets.unique()
+    assert len(categories) == num_classes, logging.warning(
+        f"""Expected {num_classes} classes but found {len(categories)} categories:
+        {sorted(categories)}"""
+    )
+    category_to_idx = {
+        cat: idx for idx, cat in enumerate(sorted(categories))
+    }  # Zero-based indices
+    # Convert string labels to numeric indices
+    numeric_labels = targets.map(category_to_idx).values
+    # One-hot encode the numeric labels
+    labels = tf.keras.utils.to_categorical(numeric_labels, num_classes=num_classes)
+    return labels
 
 
 def do_transfer_learning(
     model: Sequential,
-    train_data,
+    inputs: np.ndarray,
+    labels: np.ndarray,
     transfer_optimizer: Optimizer,
     loss_function: Loss,
     transfer_epochs: int = 10,
@@ -123,7 +169,8 @@ def do_transfer_learning(
     )
 
     model.fit(
-        x=train_data,
+        x=inputs,
+        y=labels,
         batch_size=batch_size,
         epochs=transfer_epochs,
         callbacks=transfer_callbacks,
@@ -137,7 +184,8 @@ def do_transfer_learning(
 
 def do_finetuning(
     model: Sequential,
-    train_data,
+    inputs: np.ndarray,
+    labels: np.ndarray,
     finetune_optimizer: Optimizer,
     loss_function: Loss,
     finetune_epochs: int = 10,
@@ -163,7 +211,8 @@ def do_finetuning(
 
     logging.info("---> Starting fine tuning")
     model.fit(
-        x=train_data,
+        x=inputs,
+        y=labels,
         batch_size=batch_size,
         epochs=finetune_epochs,
         callbacks=finetune_callbacks,

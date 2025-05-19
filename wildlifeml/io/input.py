@@ -10,7 +10,7 @@ from tensorflow.keras.layers import Dense, Lambda
 from tensorflow.keras.models import Sequential
 
 AVAILABLE_MODELS = {
-    "resnet50": {
+    "resnet50v2": {
         "model": tf.keras.applications.ResNet50V2,
         "preproc_func": tf.keras.applications.resnet_v2.preprocess_input,
     },
@@ -132,7 +132,7 @@ class ModelFactory:
         return model
 
 
-def load_backbone_model(model: str | Path, num_classes: int = 2) -> Sequential:
+def load_backbone_model(backbone_model: str | Path, num_classes: int = 2, **kwargs) -> Sequential:
     """
     Load a backbone model from a string identifier or path. By default, all but the final
     layer are frozen.
@@ -149,9 +149,9 @@ def load_backbone_model(model: str | Path, num_classes: int = 2) -> Sequential:
     tf.keras.Model
         The loaded model
     """
-    if model in AVAILABLE_MODELS.keys():
+    if backbone_model in AVAILABLE_MODELS.keys():
         return ModelFactory.load(
-            model,
+            backbone_model,
             num_classes=num_classes,
             weights="imagenet",
             include_top=False,
@@ -159,7 +159,7 @@ def load_backbone_model(model: str | Path, num_classes: int = 2) -> Sequential:
         )
     else:
         try:
-            backbone_model = tf.keras.models.load_model(model)
+            backbone_model = tf.keras.models.load_model(backbone_model)
             # Check if the model has the right output layer
             if not backbone_model.layers[-1].output_shape[1] == num_classes:
                 # add dense layer with softmax

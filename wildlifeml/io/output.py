@@ -18,7 +18,12 @@ def save(content: dict | str | pd.DataFrame, filepath: str | Path):
     elif isinstance(content, tf.keras.Model):
         content.save(filepath)
     else:
+        # Create parent directories if they don't exist
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        # Format content if it's a dictionary
         content = format_dict_for_text(content) if isinstance(content, dict) else content
+        # Write content to file
         with open(filepath, "w") as f:
             f.write(content)
 

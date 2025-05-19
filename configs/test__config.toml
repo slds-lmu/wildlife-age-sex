@@ -16,15 +16,12 @@ working_dir = "."
     # Parquet file with image, label, and metadata columns
     raw_data_filepath = "test_data/labeled_bbox_data.parquet"
     # Location for results of `preprocess.py` to use in `train` and `evaluate` steps.
-    train_data_filepath = "data/train.parquet"
-    test_data_filepath = "data/test.parquet"
+    train_filepath = "data/train.parquet"
+    test_filepath = "data/test.parquet"
 
     ## Model and results paths (read and write)
     [io.model] #REQUIRED
 
-    # Name of a pretrained keras model (or path to pretrained *.keras model) 
-    # Or one of ["resnet50", "inception_resnet_v2", "vgg19", "xception", "densenet121", "densenet201"]
-    backbone_model = "resnet150" 
     # Directory to use for trained model (both training specs and model file)
     model_dir = "models/test_model"
 
@@ -40,6 +37,7 @@ working_dir = "."
 
 confidence_threshold = 0.96
 cropping_mode = "shift" 
+rescale_images = true
 
 # Column from your raw data file on which to stratify sampling
 # Currently only supports stratification by one column
@@ -47,5 +45,16 @@ cropping_mode = "shift"
 stratify_by = "sex"
 
 [train]
+
+# Name of a pretrained keras model (or path to pretrained *.keras model) 
+# Or one of ["resnet50v2", "inception_resnet_v2", "vgg19", "xception", "densenet121", "densenet201"]
+backbone_model = "resnet50v2" 
+
+batch_size = 32
+target_column = "sex"
+
+#TO DO: validate num_classes on training data
+num_classes = 3
+
 
 [evaluate]
