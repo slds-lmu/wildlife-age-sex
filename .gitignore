@@ -186,4 +186,4 @@ cython_debug/
 # Large files (may exceed GitHub's size limit)
 data/
 *.parquet
-models/*.keras
+*.keras
