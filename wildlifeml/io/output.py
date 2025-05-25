@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 import tensorflow as tf
 from PIL import Image
+import json
 
 
 def save(content: dict | str | pd.DataFrame, filepath: str | Path):
@@ -11,21 +12,19 @@ def save(content: dict | str | pd.DataFrame, filepath: str | Path):
     """
     if isinstance(filepath, str):
         filepath = Path(filepath)
+
     if isinstance(content, pd.DataFrame):
         if "image" in content.columns:
             content = postprocess_image_data(content, filepath)
         content.to_parquet(filepath)
     elif isinstance(content, tf.keras.Model):
         content.save(filepath)
-    else:
-        # Create parent directories if they don't exist
+    elif isinstance(content, dict):
         filepath.parent.mkdir(parents=True, exist_ok=True)
-
-        # Format content if it's a dictionary
-        content = format_dict_for_text(content) if isinstance(content, dict) else content
-        # Write content to file
         with open(filepath, "w") as f:
-            f.write(content)
+            json.dump(content, f, indent=4)
+    else:
+        raise TypeError("Content must be a dataframe, model, or dictionary")
 
 
 def postprocess_image_data(data: pd.DataFrame, filepath: Path) -> pd.DataFrame:

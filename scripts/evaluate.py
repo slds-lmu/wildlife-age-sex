@@ -9,7 +9,14 @@ from wildlifeml.io import load, save
 from wildlifeml.train import evaluate_model
 
 
-def main(working_dir: str, test_filepath: str, model_dir: str, **kwargs):
+def main(
+    working_dir: str,
+    test_filepath: str,
+    model_dir: str,
+    target_column: str,
+    stratify_by: str | None = None,
+    **kwargs,
+):
     # Load data
     test_data = load(filepath=Path(working_dir) / Path(test_filepath))
 
@@ -17,7 +24,7 @@ def main(working_dir: str, test_filepath: str, model_dir: str, **kwargs):
     model = load(filepath=Path(working_dir) / Path(model_dir) / "model.keras")
 
     # Evaluate model
-    results = evaluate_model(model, test_data)
+    results = evaluate_model(model, test_data, target_column, stratify_by)
 
     # Save results
     timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
@@ -35,6 +42,12 @@ if __name__ == "__main__":
     with open(args.config, "rb") as f:
         args = tomli.load(f)
 
-    logging.basicConfig(**args["io"]["logging"])
+    logging.basicConfig(**args.get("logging", {}))
 
-    main(args["globals"]["working_dir"], **args["io"]["data"], **args["evaluate"])
+    main(
+        args["globals"]["working_dir"],
+        **args["io"]["model"],
+        **args["io"]["data"],
+        target_column=args["train"]["target_column"],
+        **args["evaluate"],
+    )

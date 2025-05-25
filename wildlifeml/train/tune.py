@@ -1,6 +1,7 @@
 from typing import Literal
 import logging
 import numpy as np
+from ..utils import convert_to_numeric_indices
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -46,11 +47,12 @@ def tune_model(
     # Postprocess inputs
 
     # Convert images to numpy array
-    if (num_missing_images := len(train_data["image"].isna())) > 0:
+    num_missing_images = len(train_data["image"].isna())
+    if num_missing_images > 0:
+        train_data = train_data[train_data["image"].notna()]
         logging.warning(
             f"Found {num_missing_images} missing images. Continuing with {len(train_data)} images."
         )
-        train_data = train_data[train_data["image"].notna()]
     inputs = np.stack(train_data["image"].values).astype(np.float32)  # Convert to float32
 
     # Get labels and convert to numeric indices
@@ -131,23 +133,7 @@ def tune_model(
             num_workers,
         )
 
-    return (model, "THIS IS A TEST MODEL SPEC")
-
-
-def convert_to_numeric_indices(targets: np.ndarray, num_classes: int) -> np.ndarray:
-    categories = targets.unique()
-    assert len(categories) == num_classes, logging.warning(
-        f"""Expected {num_classes} classes but found {len(categories)} categories:
-        {sorted(categories)}"""
-    )
-    category_to_idx = {
-        cat: idx for idx, cat in enumerate(sorted(categories))
-    }  # Zero-based indices
-    # Convert string labels to numeric indices
-    numeric_labels = targets.map(category_to_idx).values
-    # One-hot encode the numeric labels
-    labels = tf.keras.utils.to_categorical(numeric_labels, num_classes=num_classes)
-    return labels
+    return (model, {"info": "THIS IS A TEST MODEL SPEC"})
 
 
 def do_transfer_learning(

@@ -9,7 +9,7 @@ from PIL import Image
 from tensorflow.keras.layers import Dense, Lambda
 from tensorflow.keras.models import Sequential
 
-AVAILABLE_MODELS = {
+KERAS_AVAILABLE_MODELS = {
     "resnet50v2": {
         "model": tf.keras.applications.ResNet50V2,
         "preproc_func": tf.keras.applications.resnet_v2.preprocess_input,

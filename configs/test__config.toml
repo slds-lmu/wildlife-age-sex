@@ -37,7 +37,7 @@ working_dir = "."
 
 confidence_threshold = 0.96
 cropping_mode = "shift" 
-rescale_images = true
+rescale_to = [224, 224]
 
 # Column from your raw data file on which to stratify sampling
 # Currently only supports stratification by one column
@@ -51,10 +51,10 @@ stratify_by = "sex"
 backbone_model = "resnet50v2" 
 
 batch_size = 32
-target_column = "sex"
+target_column = "sex" #reused in evaluate
 
 #TO DO: validate num_classes on training data
 num_classes = 3
 
-
 [evaluate]
+# stratify_by = "season"

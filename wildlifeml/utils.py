@@ -2,6 +2,8 @@ import argparse
 import logging
 from datetime import datetime
 from typing import Literal
+import numpy as np
+import tensorflow as tf
 
 
 def get_session_config():
@@ -38,3 +40,21 @@ def get_session_config():
         "datefmt": "%Y-%m-%d %H:%M:%S",
         "working_dir": args.working_dir,
     }
+
+
+def convert_to_numeric_indices(targets: np.ndarray, num_classes: int | None = None) -> np.ndarray:
+    categories = targets.unique()
+    if num_classes is None:
+        num_classes = len(categories)
+    assert len(categories) == num_classes, logging.warning(
+        f"""Expected {num_classes} classes but found {len(categories)} categories:
+        {sorted(categories)}"""
+    )
+    category_to_idx = {
+        cat: idx for idx, cat in enumerate(sorted(categories))
+    }  # Zero-based indices
+    # Convert string labels to numeric indices
+    numeric_labels = targets.map(category_to_idx).values
+    # One-hot encode the numeric labels
+    labels = tf.keras.utils.to_categorical(numeric_labels, num_classes=num_classes)
+    return labels

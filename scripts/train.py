@@ -19,11 +19,11 @@ def main(
     train_data = load(filepath=Path(working_dir) / Path(train_filepath))
 
     # Train model
-    model = load_backbone_model(**training_args)
+    model = load_backbone_model(**training_args, mode="keras")
     tuned_model, tuning_specs = tune_model(model, train_data, **training_args)
 
     # Save model
-    save(tuning_specs, filepath=Path(working_dir) / Path(model_dir) / "tuning_specs.txt")
+    save(tuning_specs, filepath=Path(working_dir) / Path(model_dir) / "tuning_specs.json")
     save(tuned_model, filepath=Path(working_dir) / Path(model_dir) / "model.keras")
 
 
