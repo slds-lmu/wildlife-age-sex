@@ -9,6 +9,10 @@
 # All other paths are relative to this working directory
 working_dir = "." 
 
+#NOTE: input column is "image" by default. 
+target_column = "sex"
+num_classes = 3
+
 [io]
     ## Data paths (read and write) 
     [io.data] #REQUIRED
@@ -44,17 +48,15 @@ rescale_to = [224, 224]
 # To do a train-test split without stratification, delete or comment out this param.
 stratify_by = "sex"
 
-[train]
+[train] #REQUIRED
 
 # Name of a pretrained keras model (or path to pretrained *.keras model) 
 # Or one of ["resnet50v2", "inception_resnet_v2", "vgg19", "xception", "densenet121", "densenet201"]
 backbone_model = "resnet50v2" 
 
 batch_size = 32
-target_column = "sex" #reused in evaluate
 
-#TO DO: validate num_classes on training data
-num_classes = 3
+[evaluate] #OPTIONAL
 
-[evaluate]
+# Provide stratified evaluation on specified colunm, only supports stratification on one column
 # stratify_by = "season"

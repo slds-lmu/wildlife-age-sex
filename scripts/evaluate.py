@@ -45,9 +45,8 @@ if __name__ == "__main__":
     logging.basicConfig(**args.get("logging", {}))
 
     main(
-        args["globals"]["working_dir"],
+        **args["globals"],
         **args["io"]["model"],
         **args["io"]["data"],
-        target_column=args["train"]["target_column"],
         **args["evaluate"],
     )

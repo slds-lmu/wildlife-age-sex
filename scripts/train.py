@@ -12,6 +12,8 @@ def main(
     working_dir: str,
     train_filepath: str,
     model_dir: str,
+    target_column: str,
+    num_classes: int,
     training_args: dict,
     **kwargs,
 ):
@@ -20,7 +22,9 @@ def main(
 
     # Train model
     model = load_backbone_model(**training_args, mode="keras")
-    tuned_model, tuning_specs = tune_model(model, train_data, **training_args)
+    tuned_model, tuning_specs = tune_model(
+        model, train_data, target_column, num_classes, **training_args
+    )
 
     # Save model
     save(tuning_specs, filepath=Path(working_dir) / Path(model_dir) / "tuning_specs.json")
@@ -37,7 +41,7 @@ if __name__ == "__main__":
     logging.basicConfig(**args.get("logging", {}))
 
     main(
-        args["globals"]["working_dir"],
+        **args["globals"],
         **args["io"]["data"],
         **args["io"]["model"],
         training_args=args["train"],

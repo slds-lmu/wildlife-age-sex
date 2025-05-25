@@ -61,7 +61,7 @@ def evaluate_model(
     results = {}
 
     # Calculate overall metrics
-    # Get raw numeric indices instead of one-hot encoded labels
+    # Get raw numeric indices
     categories = test_data[target_column].unique()
     category_to_idx = {cat: idx for idx, cat in enumerate(sorted(categories))}
     labels = test_data[target_column].map(category_to_idx).values
