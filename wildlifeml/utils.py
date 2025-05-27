@@ -42,19 +42,21 @@ def get_session_config():
     }
 
 
-def convert_to_numeric_indices(targets: np.ndarray, num_classes: int | None = None) -> np.ndarray:
-    categories = targets.unique()
-    if num_classes is None:
-        num_classes = len(categories)
-    assert len(categories) == num_classes, logging.warning(
-        f"""Expected {num_classes} classes but found {len(categories)} categories:
-        {sorted(categories)}"""
-    )
-    category_to_idx = {
-        cat: idx for idx, cat in enumerate(sorted(categories))
-    }  # Zero-based indices
+def convert_to_numeric_indices(
+    targets: np.ndarray, classes: list[str] | None = None
+) -> np.ndarray:
+    if classes is None:
+        classes = targets.unique()
+
+    # Check for additional classes not in the provided list
+    unique_targets = set(targets.unique())
+    if not unique_targets.issubset(set(classes)):
+        extra_classes = unique_targets - set(classes)
+        raise ValueError(f"Found additional classes not in provided list: {extra_classes}")
+
+    category_to_idx = {cat: idx for idx, cat in enumerate(classes)}  # Zero-based indices
     # Convert string labels to numeric indices
     numeric_labels = targets.map(category_to_idx).values
     # One-hot encode the numeric labels
-    labels = tf.keras.utils.to_categorical(numeric_labels, num_classes=num_classes)
+    labels = tf.keras.utils.to_categorical(numeric_labels)
     return labels

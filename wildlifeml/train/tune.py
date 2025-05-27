@@ -25,7 +25,7 @@ def tune_model(
     model,
     train_data,
     target_column: str,
-    num_classes: int,
+    classes: list[str],
     batch_size: int,
     loss_function: Literal[
         "binary_crossentropy", "categorical_crossentropy"
@@ -60,7 +60,7 @@ def tune_model(
         target_column in train_data.columns
     ), f"Target column {target_column} not found in train_data"
     # Get unique categories and create mapping
-    labels = convert_to_numeric_indices(train_data[target_column], num_classes)
+    labels = convert_to_numeric_indices(train_data[target_column], classes)
 
     loss_function = (
         BinaryCrossentropy()

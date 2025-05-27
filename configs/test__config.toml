@@ -11,7 +11,7 @@ working_dir = "."
 
 #NOTE: input column is "image" by default. 
 target_column = "sex"
-num_classes = 3
+classes = ["male", "female", "unknown"]
 
 [io]
     ## Data paths (read and write) 
@@ -59,4 +59,4 @@ batch_size = 32
 [evaluate] #OPTIONAL
 
 # Provide stratified evaluation on specified colunm, only supports stratification on one column
-# stratify_by = "season"
+stratify_by = "dummy_metadata"

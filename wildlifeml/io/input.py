@@ -117,7 +117,7 @@ class ModelFactory:
 
         Note: The model still needs to be compiled.
         """
-        model_entry = AVAILABLE_MODELS[model_id]
+        model_entry = KERAS_AVAILABLE_MODELS[model_id]
         model_cls = model_entry["model"]
 
         model = Sequential()
@@ -140,7 +140,7 @@ def load_backbone_model(backbone_model: str | Path, num_classes: int = 2, **kwar
     Args:
     -----
     model: str | Path
-        Either a model name from AVAILABLE_MODELS or path to a model file
+        Either a model name from KERAS_AVAILABLE_MODELS or path to a model file
     num_classes: int
         Number of output classes for the model
 
@@ -149,7 +149,7 @@ def load_backbone_model(backbone_model: str | Path, num_classes: int = 2, **kwar
     tf.keras.Model
         The loaded model
     """
-    if backbone_model in AVAILABLE_MODELS.keys():
+    if backbone_model in KERAS_AVAILABLE_MODELS.keys():
         return ModelFactory.load(
             backbone_model,
             num_classes=num_classes,
@@ -174,7 +174,7 @@ def load_backbone_model(backbone_model: str | Path, num_classes: int = 2, **kwar
         except FileNotFoundError as e:
             raise ValueError(
                 f"""
-                Model not found. Please specify a valid model name from {AVAILABLE_MODELS.keys()}
+                Model not found. Please specify a valid model name from {KERAS_AVAILABLE_MODELS.keys()}
                 or provide a path to a valid model file [#TODO: add valid extensions].
                 """
             ) from e

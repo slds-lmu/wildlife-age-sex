@@ -74,7 +74,7 @@ def evaluate_model(
         for val in test_data[stratify_by].unique():
             subset_labels = labels[test_data[stratify_by] == val]
             subset_predictions = predictions[test_data[stratify_by] == val]
-            results[val] = _get_metrics(subset_labels, subset_predictions)
+            results[str(val)] = _get_metrics(subset_labels, subset_predictions)
 
     return results
 

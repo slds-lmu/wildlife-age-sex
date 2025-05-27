@@ -11,8 +11,8 @@ from wildlifeml.preprocess import preprocess_data, split_data
 def main(
     working_dir: str,
     raw_data_filepath: str,
-    train_data_filepath: str,
-    test_data_filepath: str,
+    train_filepath: str,
+    test_filepath: str,
     preprocess_kwargs: dict,
     **kwargs,
 ):
@@ -26,8 +26,8 @@ def main(
     for train, test in split_data(
         preprocessed_data, stratify_by=preprocess_kwargs.get("stratify_by", None)
     ):
-        save(train, filepath=Path(working_dir) / Path(train_data_filepath))
-        save(test, filepath=Path(working_dir) / Path(test_data_filepath))
+        save(train, filepath=Path(working_dir) / Path(train_filepath))
+        save(test, filepath=Path(working_dir) / Path(test_filepath))
 
 
 if __name__ == "__main__":

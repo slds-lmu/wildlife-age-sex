@@ -13,7 +13,7 @@ def main(
     train_filepath: str,
     model_dir: str,
     target_column: str,
-    num_classes: int,
+    classes: list[str],
     training_args: dict,
     **kwargs,
 ):
@@ -21,9 +21,9 @@ def main(
     train_data = load(filepath=Path(working_dir) / Path(train_filepath))
 
     # Train model
-    model = load_backbone_model(**training_args, mode="keras")
+    model = load_backbone_model(**training_args, num_classes=len(classes), mode="keras")
     tuned_model, tuning_specs = tune_model(
-        model, train_data, target_column, num_classes, **training_args
+        model, train_data, target_column, classes, **training_args
     )
 
     # Save model
