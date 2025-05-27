@@ -1,7 +1,7 @@
 from typing import Literal
 import logging
 import numpy as np
-from ..utils import convert_to_numeric_indices
+from ..utils import convert_to_numeric_indices, get_model_summary
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -45,6 +45,27 @@ def tune_model(
     **kwargs,
 ):
     # Postprocess inputs
+    # Collect tuning specifications
+    tuning_specs = {
+        "training_params": {
+            "loss_function": loss_function,
+            "transfer_epochs": transfer_epochs,
+            "finetune_epochs": finetune_epochs,
+            "transfer_optimizer": {
+                "name": transfer_optimizer,
+                "learning_rate": transfer_learning_rate,
+            },
+            "finetune_optimizer": {
+                "name": finetune_optimizer,
+                "learning_rate": finetune_learning_rate,
+            },
+            "finetune_layers": finetune_layers,
+            "batch_size": batch_size,
+            "earlystop_metric": earlystop_metric,
+            "transfer_patience": transfer_patience,
+            "finetune_patience": finetune_patience,
+        }
+    }
 
     # Convert images to numpy array
     num_missing_images = len(train_data["image"].isna())
@@ -132,8 +153,9 @@ def tune_model(
             finetune_layers,
             num_workers,
         )
+    tuning_specs["model_summary"] = get_model_summary(model)
 
-    return (model, {"info": "THIS IS A TEST MODEL SPEC"})
+    return (model, tuning_specs)
 
 
 def do_transfer_learning(

@@ -60,3 +60,18 @@ def convert_to_numeric_indices(
     # One-hot encode the numeric labels
     labels = tf.keras.utils.to_categorical(numeric_labels)
     return labels
+
+
+def get_model_summary(model: tf.keras.Model) -> str:
+    """Get a formatted model summary suitable for JSON storage.
+
+    Args:
+        model: Keras model to summarize
+
+    Returns:
+        String containing model summary with newlines preserved and special characters removed
+    """
+    # Capture model summary output
+    summary_list = []
+    model.summary(print_fn=lambda x: summary_list.append(x))
+    return "\n".join(summary_list)
