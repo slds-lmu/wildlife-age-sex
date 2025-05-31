@@ -10,7 +10,7 @@
 working_dir = "." 
 
 #NOTE: input column is "image" by default. 
-target_column = "sex"
+target_column = "Sex"
 classes = ["male", "female", "unknown"]
 
 [io]
@@ -18,16 +18,16 @@ classes = ["male", "female", "unknown"]
     [io.data] #REQUIRED
 
     # Parquet file with image, label, and metadata columns
-    raw_data_filepath = "test_data/labeled_bbox_data.parquet"
+    raw_data_filepath = "data/preprocessed/labeled_bbox_data.parquet"
     # Location for results of `preprocess.py` to use in `train` and `evaluate` steps.
-    train_filepath = "data/test/train.parquet"
-    test_filepath = "data/test/test.parquet"
+    train_filepath = "data/baseline/train.parquet"
+    test_filepath = "data/baseline/test.parquet"
 
     ## Model and results paths (read and write)
     [io.model] #REQUIRED
 
     # Directory to use for trained model (both training specs and model file)
-    model_dir = "models/test_model"
+    model_dir = "models/baseline_model"
 
     # Logging configuration (write)
     [io.logging] #OPTIONAL
@@ -46,7 +46,7 @@ rescale_to = [224, 224]
 # Column from your raw data file on which to stratify sampling
 # Currently only supports stratification by one column
 # To do a train-test split without stratification, delete or comment out this param.
-stratify_by = "sex"
+stratify_by = "Sex"
 
 [train] #REQUIRED
 
@@ -59,4 +59,4 @@ batch_size = 32
 [evaluate] #OPTIONAL
 
 # Provide stratified evaluation on specified colunm, only supports stratification on one column
-stratify_by = "dummy_metadata"
+stratify_by = "is_summer"

@@ -61,11 +61,13 @@ def load(filepath: str | Path, image_mode: Literal["RGB", "L"] = "RGB"):
     if isinstance(filepath, str):
         filepath = Path(filepath)
     if filepath.suffix == ".parquet":
+        logging.info(f"Loading parquet file: {filepath}.")
         data = pd.read_parquet(filepath)
         if "image_path" in data.columns:
             data["image"] = data["image_path"].apply(lambda x: try_load_image(x, image_mode))
         return data
     elif filepath.suffix == ".keras":
+        logging.info(f"Loading keras model: {filepath}.")
         return tf.keras.models.load_model(filepath)
     else:
         raise ValueError(f"File {filepath} is not a parquet file or keras file.")
@@ -120,6 +122,7 @@ class ModelFactory:
         model_entry = KERAS_AVAILABLE_MODELS[model_id]
         model_cls = model_entry["model"]
 
+        logging.info("Configuring pretrained model...")
         model = Sequential()
         model.add(Lambda(model_entry["preproc_func"]))
         model.add(model_cls(weights=weights, include_top=include_top, pooling=pooling))
@@ -150,6 +153,7 @@ def load_backbone_model(backbone_model: str | Path, num_classes: int = 2, **kwar
         The loaded model
     """
     if backbone_model in KERAS_AVAILABLE_MODELS.keys():
+        logging.info(f"Loading model from pretrained model factory: {backbone_model}.")
         return ModelFactory.load(
             backbone_model,
             num_classes=num_classes,
@@ -159,6 +163,7 @@ def load_backbone_model(backbone_model: str | Path, num_classes: int = 2, **kwar
         )
     else:
         try:
+            logging.info(f"Loading model from path: {backbone_model}.")
             backbone_model = tf.keras.models.load_model(backbone_model)
             # Check if the model has the right output layer
             if not backbone_model.layers[-1].output_shape[1] == num_classes:

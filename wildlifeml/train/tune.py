@@ -67,8 +67,9 @@ def tune_model(
         }
     }
 
+    logging.info("Postprocessing inputs...")
     # Convert images to numpy array
-    num_missing_images = len(train_data["image"].isna())
+    num_missing_images = sum([img is None for img in train_data["image"]])
     if num_missing_images > 0:
         train_data = train_data[train_data["image"].notna()]
         logging.warning(
@@ -153,6 +154,7 @@ def tune_model(
             finetune_layers,
             num_workers,
         )
+    logging.info("Generating model summary...")
     tuning_specs["model_summary"] = get_model_summary(model)
 
     return (model, tuning_specs)
@@ -170,12 +172,14 @@ def do_transfer_learning(
     batch_size: int = 32,
     num_workers: int = 0,
 ):
+    logging.info("Compiling model...")
     model.compile(
         optimizer=transfer_optimizer,
         loss=loss_function,
         metrics=eval_metrics,
     )
 
+    logging.info("Starting transfer learning...")
     model.fit(
         x=inputs,
         y=labels,
@@ -210,14 +214,14 @@ def do_finetuning(
     for layer in model.layers[-finetune_layers:]:
         layer.trainable = True
 
-    logging.info("---> Compiling model")
+    logging.info("Compiling model...")
     model.compile(
         optimizer=finetune_optimizer,
         loss=loss_function,
         metrics=eval_metrics,
     )
 
-    logging.info("---> Starting fine tuning")
+    logging.info("Starting fine tuning...")
     model.fit(
         x=inputs,
         y=labels,

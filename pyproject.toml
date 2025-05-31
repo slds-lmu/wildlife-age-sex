@@ -54,8 +54,8 @@ args = [
 
 [tool.poe.tasks.run-pipeline]
 shell = """
-    uv run scripts/preprocess.py --config $CONFIG_PATH
-    uv run scripts/train.py --config $CONFIG_PATH
+    uv run scripts/preprocess.py --config $CONFIG_PATH && \
+    uv run scripts/train.py --config $CONFIG_PATH && \
     uv run scripts/evaluate.py --config $CONFIG_PATH
 """
 args = [

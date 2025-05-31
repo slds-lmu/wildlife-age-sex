@@ -49,10 +49,13 @@ def evaluate_model(
     Returns:
         A dictionary containing the evaluation results.
     """
+    logging.info(f"Starting model evaluation with {len(test_data)} test samples")
+    logging.info(f"Target column: {target_column}, Stratify by: {stratify_by}")
+
     if stratify_by and stratify_by not in test_data.columns:
         raise ValueError(f"Stratify by column {stratify_by} not found in test data.")
 
-    num_missing_images = len(test_data["image"].isna())
+    num_missing_images = sum([img is None for img in test_data["image"]])
     if num_missing_images > 0:
         test_data = test_data[test_data["image"].notna()]
         logging.warning(
@@ -65,16 +68,25 @@ def evaluate_model(
     categories = test_data[target_column].unique()
     category_to_idx = {cat: idx for idx, cat in enumerate(sorted(categories))}
     labels = test_data[target_column].map(category_to_idx).values
+    logging.debug(f"Label distribution: {np.bincount(labels)}")
 
+    logging.info("Generating predictions...")
     predictions = _get_predictions(model, test_data["image"].values)
+    logging.debug(f"Prediction distribution: {np.bincount(predictions)}")
+
+    logging.info("Calculating overall metrics...")
     results["overall"] = _get_metrics(labels, predictions)
+    logging.info(f"Overall accuracy: {results['overall']['accuracy']:.3f}")
 
     # Calculate stratified metrics if requested
     if stratify_by is not None:
+        logging.info(f"Calculating stratified metrics by {stratify_by}...")
         for val in test_data[stratify_by].unique():
             subset_labels = labels[test_data[stratify_by] == val]
             subset_predictions = predictions[test_data[stratify_by] == val]
+            logging.debug(f"Stratum {val}: {len(subset_labels)} samples")
             results[str(val)] = _get_metrics(subset_labels, subset_predictions)
+            logging.info(f"{val} accuracy: {results[str(val)]['accuracy']:.3f}")
 
     return results
 
@@ -89,15 +101,19 @@ def _get_metrics(labels: np.ndarray, predictions: np.ndarray) -> dict:
     """Helper function to calculate all evaluation metrics."""
     # Convert confusion matrix to dict with row/col indices as keys
     cm = confusion_matrix(labels, predictions)
+    logging.debug(f"Confusion matrix shape: {cm.shape}")
     cm_dict = {
         f"{i}_{j}": int(cm[i, j])  # Convert to int for JSON serialization
         for i in range(cm.shape[0])
         for j in range(cm.shape[1])
     }
-    return {
+
+    metrics = {
         "precision": precision_score(labels, predictions, average="weighted", zero_division=0),
         "recall": recall_score(labels, predictions, average="weighted", zero_division=0),
         "f1-score": f1_score(labels, predictions, average="weighted", zero_division=0),
         "accuracy": accuracy_score(labels, predictions),
         "confusion_matrix": cm_dict,
     }
+    logging.debug(f"Calculated metrics: {metrics}")
+    return metrics

@@ -13,6 +13,9 @@ def save(content: dict | str | pd.DataFrame, filepath: str | Path):
     if isinstance(filepath, str):
         filepath = Path(filepath)
 
+    # Make dir if not exists
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
     if isinstance(content, pd.DataFrame):
         if "image" in content.columns:
             content = postprocess_image_data(content, filepath)

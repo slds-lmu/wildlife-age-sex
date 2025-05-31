@@ -2,6 +2,11 @@ import argparse
 import logging
 from datetime import datetime
 from pathlib import Path
+import os
+
+# Suppress TensorFlow warnings
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # 0=all, 1=no INFO, 2=no INFO/WARN, 3=no INFO/WARN/ERROR
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # Disable oneDNN warnings
 
 import tomli
 

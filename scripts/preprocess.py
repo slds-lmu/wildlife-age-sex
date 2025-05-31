@@ -1,3 +1,9 @@
+import os
+
+# Suppress TensorFlow warnings
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # 0=all, 1=no INFO, 2=no INFO/WARN, 3=no INFO/WARN/ERROR
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # Disable oneDNN warnings
+
 import argparse
 import logging
 from pathlib import Path
@@ -17,12 +23,16 @@ def main(
     **kwargs,
 ):
     # Load data
+    logging.info(f"Loading data from {raw_data_filepath}...")
     data = load(filepath=Path(working_dir) / Path(raw_data_filepath))
+    logging.info(f"Loaded {len(data)} rows of data.")
 
     # Preprocess data
+    logging.info(f"Preprocessing data...")
     preprocessed_data = preprocess_data(data, **preprocess_kwargs)
 
     # Split data, save to disk
+    logging.info(f"Splitting data...")
     for train, test in split_data(
         preprocessed_data, stratify_by=preprocess_kwargs.get("stratify_by", None)
     ):
@@ -37,7 +47,6 @@ if __name__ == "__main__":
 
     with open(args.config, "rb") as f:
         args = tomli.load(f)
-    print(args)
     logging.basicConfig(**args.get("logging", {}))
 
     main(

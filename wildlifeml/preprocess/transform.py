@@ -22,7 +22,7 @@ def preprocess_data(
         The data to preprocess containing the columns:
         - 'image_id': The id of the image. Unique, used to locate image in downstream tasks.
         - 'image': The matrix representation of the image.
-        - 'conf': The confidence score of the bounding box.
+        - 'confidence': The confidence score of the bounding box.
         - 'bbox': The relativebounding box coordinates of the animal in the image.
         - 'sex': The sex of the animal if labeled (male, female, unknown).
         - 'age': The age of the animal if labeled (yearling, adult, juvenile, unknown).
@@ -48,9 +48,18 @@ def preprocess_data(
     tuple(pd.DataFrame, pd.DataFrame)
         A tuple of dataframes, train and test.
     """
-    preprocessed_data = data[data["conf"] >= confidence_threshold].drop(columns=["conf"])
+    logging.info(f"Starting preprocessing with {len(data)} images")
+    logging.info(
+        f"Using confidence threshold: {confidence_threshold}, cropping mode: {cropping_mode}, rescale size: {rescale_to[0]}x{rescale_to[1]}"
+    )
+
+    preprocessed_data = data[data["confidence"] >= confidence_threshold].drop(
+        columns=["confidence"]
+    )
+    logging.info(f"Filtered to {len(preprocessed_data)} images after confidence threshold")
 
     if cropping_mode == "shift":
+        logging.info("Applying shift cropping mode")
         preprocessed_data["image"] = preprocessed_data.apply(
             lambda row: crop_image(row["image"], row["bbox"], "shift")
             if row["image"] is not None
@@ -58,16 +67,21 @@ def preprocess_data(
             axis=1,
         )
     elif cropping_mode == "pad":
+        logging.info("Applying pad cropping mode")
         preprocessed_data["image"] = preprocessed_data.apply(
             lambda row: crop_image(row["image"], row["bbox"], "pad")
             if row["image"] is not None
             else None,
             axis=1,
         )
+    else:
+        raise ValueError(f"Invalid cropping mode: {cropping_mode}. Use 'shift' or 'pad'.")
 
     if rescale_to is not None:
+        logging.info(f"Rescaling images to {rescale_to[0]}x{rescale_to[1]}")
         preprocessed_data["image"] = rescale_images(preprocessed_data["image"], rescale_to)
 
+    logging.info("Transformations completed successfully")
     return preprocessed_data
 
 
@@ -91,13 +105,15 @@ def crop_image(
     --------
     np.ndarray
     """
+    logging.debug(f"Cropping image with mode: {cropping_mode}, bbox: {bbox_coords}")
     x_coords, y_coords = get_absolute_coords(bbox_coords, full_image.shape[:2])
+    logging.debug(f"Absolute coordinates - x: {x_coords}, y: {y_coords}")
+
     if cropping_mode == "shift":
         cropped_image = _crop_image(full_image, x_coords, y_coords)
     elif cropping_mode == "pad":
         cropped_image = _crop_and_pad_image(full_image, x_coords, y_coords)
-    else:
-        raise ValueError(f"Invalid cropping mode: {cropping_mode}. Use 'shift' or 'pad'.")
+    logging.debug(f"Cropped image shape: {cropped_image.shape}")
     return cropped_image
 
 
@@ -121,10 +137,13 @@ def get_absolute_coords(
     """
     # Convert proportional coordinates to absolute pixel values
     height, width = image_shape
+    logging.debug(f"Converting coordinates for image shape: {image_shape}")
     x_coords = int(bbox_coords[0] * width), int(bbox_coords[2] * width)
     y_coords = int(bbox_coords[1] * height), int(bbox_coords[3] * height)
     # Return x range, y range
-    return (min(x_coords), max(x_coords)), (min(y_coords), max(y_coords))
+    result = (min(x_coords), max(x_coords)), (min(y_coords), max(y_coords))
+    logging.debug(f"Converted coordinates - x: {result[0]}, y: {result[1]}")
+    return result
 
 
 def _crop_and_pad_image(
@@ -147,16 +166,13 @@ def _crop_and_pad_image(
     np.ndarray
         The cropped and padded image.
     """
-    # Get image dimensions and coordinates
     height, width = image.shape[:2]
-
     x_min, x_max = x_coords
     y_min, y_max = y_coords
-
-    # Calculate the size of the square crop
     crop_size = max(x_max - x_min, y_max - y_min)
 
-    # Validate crop size
+    logging.debug(f"Padding image: size={crop_size}, original shape={image.shape}")
+
     if crop_size <= 0:
         raise ValueError(f"Invalid crop size: {crop_size}. Check bounding box coordinates.")
 
@@ -205,16 +221,13 @@ def _crop_image(
     np.ndarray
         The cropped image.
     """
-    # Get image dimensions and coordinates
     height, width = image.shape[:2]
-
     x_min, x_max = x_coords
     y_min, y_max = y_coords
-
-    # Calculate the size of the square crop
     crop_size = max(x_max - x_min, y_max - y_min)
 
-    # Validate crop size
+    logging.debug(f"Attempting shift crop: size={crop_size}, original shape={image.shape}")
+
     if crop_size <= 0:
         raise ValueError(f"Invalid crop size: {crop_size}. Check bounding box coordinates.")
 
@@ -247,10 +260,10 @@ def _crop_image(
 
     # Check if shifted crop would work
     if x_start + crop_size <= width and y_start + crop_size <= height:
-        # Shifted crop works, return it
+        logging.debug("Shifted crop successful")
         return image[y_start : y_start + crop_size, x_start : x_start + crop_size]
     else:
-        # Fall back to original padding method
+        logging.debug("Shifted crop failed, falling back to padding")
         return _crop_and_pad_image(image, x_coords, y_coords)
 
 
@@ -258,4 +271,5 @@ def rescale_images(images: list[np.ndarray], rescale_to: tuple[int, int]) -> lis
     """
     Rescale images to a 224 x 224 square.
     """
+    logging.debug(f"Rescaling {len(images)} images to {rescale_to[0]}x{rescale_to[1]}")
     return [cv2.resize(image, rescale_to) if image is not None else None for image in images]

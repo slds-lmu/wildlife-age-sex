@@ -35,16 +35,21 @@ def split_data(
     if stratify_by:
         if stratify_by not in data.columns:
             raise ValueError("stratify_by must be a column in the data.")
+        logging.warning(
+            f"Dropping {len(data[data[stratify_by].isna()])} rows with missing values in `{stratify_by}`."
+        )
+        data = data.dropna(subset=[stratify_by])
 
     # Stratify by specified column or do not stratify
     groups_to_stratify_by = data[stratify_by] if stratify_by else np.ones(len(data))
 
     sss = StratifiedShuffleSplit(n_splits=num_splits, train_size=train_prop)
     try:
+        logging.info(f"Trying to split data stratified by `{stratify_by}`.")
         splits = sss.split(data, groups_to_stratify_by)
     except ValueError as e:
         logging.warning(
-            f"StratifiedShuffleSplit failed with error: {e}. Returning unstratified split."
+            f"StratifiedShuffleSplit failed with error: {e} Returning unstratified split."
         )
         splits = sss.split(data, np.ones(len(data)))
 

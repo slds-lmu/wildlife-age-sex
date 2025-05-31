@@ -1,0 +1,21 @@
+{
+    "training_params": {
+        "loss_function": "binary_crossentropy",
+        "transfer_epochs": 10,
+        "finetune_epochs": 10,
+        "transfer_optimizer": {
+            "name": "adam",
+            "learning_rate": 0.01
+        },
+        "finetune_optimizer": {
+            "name": "adam",
+            "learning_rate": 0.001
+        },
+        "finetune_layers": 1,
+        "batch_size": 32,
+        "earlystop_metric": "val_loss",
+        "transfer_patience": 10,
+        "finetune_patience": 10
+    },
+    "model_summary": "Model: \"sequential\"\n_________________________________________________________________\n Layer (type)                Output Shape              Param #   \n=================================================================\n lambda (Lambda)             (None, 224, 224, 3)       0         \n                                                                 \n resnet50v2 (Functional)     (None, 2048)              23564800  \n                                                                 \n dense (Dense)               (None, 3)                 6147      \n                                                                 \n=================================================================\nTotal params: 23,570,947\nTrainable params: 6,147\nNon-trainable params: 23,564,800\n_________________________________________________________________"
+}
