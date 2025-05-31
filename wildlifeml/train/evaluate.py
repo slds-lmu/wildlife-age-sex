@@ -85,8 +85,12 @@ def evaluate_model(
             subset_labels = labels[test_data[stratify_by] == val]
             subset_predictions = predictions[test_data[stratify_by] == val]
             logging.debug(f"Stratum {val}: {len(subset_labels)} samples")
-            results[str(val)] = _get_metrics(subset_labels, subset_predictions)
-            logging.info(f"{val} accuracy: {results[str(val)]['accuracy']:.3f}")
+            results[stratify_by + ": " + str(val)] = _get_metrics(
+                subset_labels, subset_predictions
+            )
+            logging.info(
+                f"{val} accuracy: {results[stratify_by + "_" + str(val)]['accuracy']:.3f}"
+            )
 
     return results
 
