@@ -6,39 +6,57 @@ import numpy as np
 import json
 import logging
 from pathlib import Path
+from sklearn.metrics import ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 
 def plot_confusion_matrix(cm_dict, labels=None):
-    """Create an interactive confusion matrix plot from dictionary format."""
-    # Convert dictionary to matrix
-    n = int(np.sqrt(len(cm_dict)))
-    cm = np.zeros((n, n), dtype=int)
-    for key, value in cm_dict.items():
-        i, j = map(int, key.split("_"))
-        cm[i, j] = value
+    """Create a confusion matrix plot using scikit-learn's ConfusionMatrixDisplay.
 
-    # Create labels if not provided
+    Args:
+        cm_dict: Dictionary with keys in format "true_label_predicted_label"
+        labels: Optional list of labels in correct order. If None, extracted from cm_dict.
+    """
+    # Extract unique labels from dictionary keys
     if labels is None:
-        labels = [f"Class {i}" for i in range(n)]
+        labels = sorted(set(label for key in cm_dict.keys() for label in key.split("_")))
 
-    fig = go.Figure(
-        data=go.Heatmap(
-            z=cm,
-            x=labels,
-            y=labels,
-            colorscale="Blues",
-            text=cm,
-            texttemplate="%{text}",
-            textfont={"size": 10},
-        )
+    n = len(labels)
+    cm = np.zeros((n, n), dtype=int)
+
+    # Fill confusion matrix using label indices
+    label_to_idx = {label: idx for idx, label in enumerate(labels)}
+    for key, value in cm_dict.items():
+        try:
+            true_label, pred_label = key.split("_")
+            i, j = label_to_idx[true_label], label_to_idx[pred_label]
+            cm[i, j] = value
+        except Exception as e:
+            st.write(f"Error processing key {key}: {e}")
+            continue
+
+    # Create the confusion matrix display
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+
+    # Create figure and plot
+    fig, ax = plt.subplots(figsize=(10, 8))
+    disp.plot(
+        ax=ax,
+        cmap="Blues",
+        values_format="d",  # Show integer values
+        colorbar=True,
     )
-    fig.update_layout(
-        title="Confusion Matrix",
-        xaxis_title="Predicted",
-        yaxis_title="True",
-        width=600,
-        height=500,
-    )
+
+    # Customize the plot
+    plt.title("Confusion Matrix", pad=20)
+    plt.xlabel("Predicted Label")
+    plt.ylabel("True Label")
+
+    # Rotate x-axis labels for better readability
+    plt.xticks(rotation=45, ha="right")
+
+    # Adjust layout to prevent label cutoff
+    plt.tight_layout()
     return fig
 
 
@@ -113,7 +131,7 @@ def render_results(model):
 
         # Display overall confusion matrix
         st.subheader("Overall Confusion Matrix")
-        st.plotly_chart(plot_confusion_matrix(results["overall"]["confusion_matrix"]))
+        st.pyplot(plot_confusion_matrix(results["overall"]["confusion_matrix"]))
 
         # Display stratified results
         st.subheader("Stratified Results")
@@ -128,7 +146,7 @@ def render_results(model):
             if stratum != "overall":
                 st.write(f"### {stratum}")
                 display_metrics(metrics)
-                st.plotly_chart(plot_confusion_matrix(metrics["confusion_matrix"]))
+                st.pyplot(plot_confusion_matrix(metrics["confusion_matrix"]))
 
     except Exception as e:
         st.error(f"Error loading results: {e}")
