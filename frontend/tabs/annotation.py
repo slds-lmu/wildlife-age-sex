@@ -10,20 +10,15 @@ ANNOTATION_CONFIG = {
     "class_name": st.column_config.TextColumn(
         "Class Name", help="The name of the class to annotate"
     ),
-    "class_labels": st.column_config.ListColumn(
-        "Class Labels", help="The labels of the class to annotate"
+    "class_labels": st.column_config.TextColumn(
+        "Class Labels", help="The labels of the class to annotate, comma separated"
     ),
 }
 
 
 def get_unlabeled_image_dirs():
     """Get all image directories in the data directory that do not have a csv file in them."""
-    return [
-        d
-        for d in os.listdir("data")
-        if os.path.isdir(os.path.join("data", d))
-        and not os.path.exists(os.path.join("data", d, "annotations.csv"))
-    ]
+    return [d for d in os.listdir("data") if os.path.isdir(os.path.join("data", d))]
 
 
 def load_bbox_results(image_dir: str):
@@ -55,61 +50,140 @@ def load_bbox_results(image_dir: str):
     return results
 
 
+def bboxes_to_code(image_dir: str, bboxes: list):
+    try:
+        existing_annotations = pd.read_csv(
+            Path("data") / image_dir / "annotations.csv"
+        ).bbox_id.tolist()
+    except FileNotFoundError:
+        existing_annotations = []
+
+    if not bboxes:
+        st.warning("No bounding boxes found.")
+        return None
+
+    elif len(existing_annotations) == len(bboxes):
+        st.success("All bounding boxes annotated!")
+        return None
+    else:
+        return [bbox for bbox in bboxes if bbox["bbox_id"] not in existing_annotations]
+
+
+def exit_annotation():
+    st.session_state.pop("class_df")
+    st.session_state.pop("image_dir")
+
+
 def render_annotation_page():
     """Render evaluation results for a specific model."""
     st.title("WIP: Annotation")
+
+    # Use session_state to persist config across reruns
+    if "class_df" in st.session_state and "image_dir" in st.session_state:
+        class_df = st.session_state.class_df
+        image_dir = st.session_state.image_dir
+        # Display an info section with image directory and class definitions
+        with st.expander("Annotation Info", expanded=True):
+            st.markdown(f"**Image Directory:** `{image_dir}`")
+            st.markdown("**Class Definitions:**")
+            for __, row in class_df.iterrows():
+                class_name = row["class_name"]
+                class_labels = ", ".join(row["class_labels"])
+                st.markdown(f"- **{class_name}**: {class_labels}")
+        render_coding_interface(image_dir, class_df)
+        st.divider()
+        st.warning(
+            """⚠️ WARNING: Exiting the annotation interface will finalize the annotation file.
+            You cannot return to this folder of images without losing all your annotations."""
+        )
+        st.button("Exit", key="exit_annotation", on_click=exit_annotation)
+        return
+
     image_dir = st.selectbox("Select image directory", get_unlabeled_image_dirs())
 
     class_df = st.data_editor(
-        pd.DataFrame(columns=ANNOTATION_CONFIG.keys(), index=range(1)),
+        pd.DataFrame({"class_name": ["ex_class"], "class_labels": ["label_1, label_2"]}),
         use_container_width=True,
         num_rows="dynamic",
     )
-    if st.button("Continue to annotation"):
-        bboxes = load_bbox_results(image_dir)
-        if not bboxes:
-            st.warning("No bounding boxes found.")
-            return
+    class_df["class_labels"] = class_df["class_labels"].str.split(",")
+    class_df["class_labels"] = class_df["class_labels"].apply(
+        lambda x: [label.strip() for label in x]
+    )
 
-        # Prepare to collect annotations
-        annotations = []
+    if st.button("Continue to annotation", key="config_submit"):
+        # Store config in session_state before rerun
+        st.session_state.class_df = class_df
+        st.session_state.image_dir = image_dir
+        annotations_path = Path("data") / image_dir / "annotations.csv"
+        if os.path.exists(annotations_path):
+            confirm_overwrite(image_dir)
 
-        for bbox in bboxes:
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("Image")
-                # Load and display image with bounding box
-                if os.path.exists(bbox["image_path"]):
-                    image = Image.open(bbox["image_path"]).convert("RGB")
-                    draw = ImageDraw.Draw(image)
-                    # bbox format: [x_start, y_start, x_end, y_end] normalized (0-1)
-                    if bbox["bbox"]:
-                        w, h = image.size
-                        x_start, y_start, x_end, y_end = bbox["bbox"]
-                        # Convert normalized coordinates to pixel values
-                        box = [x_start * w, y_start * h, x_end * w, y_end * h]
-                        draw.rectangle(box, outline="red", width=3)
-                    st.image(image, caption=bbox["image_path"], use_column_width=True)
+
+def confirm_overwrite(image_dir: str):
+    st.warning(
+        "You are about to start annotating a folder of images that already has annotations. This will overwrite the existing annotations."
+    )
+    st.button(
+        "Continue with overwrite",
+        key="confirmed_overwrite",
+        on_click=clear_annotations(image_dir),
+    )
+
+
+def clear_annotations(image_dir: str):
+    annotations_path = Path("data") / image_dir / "annotations.csv"
+    annotations_path.unlink()
+
+
+def render_coding_interface(image_dir: str, class_df: pd.DataFrame):
+    bboxes = load_bbox_results(image_dir)
+    unlabeled_bboxes = bboxes_to_code(image_dir, bboxes)
+    if not unlabeled_bboxes:
+        return
+
+    bbox = unlabeled_bboxes[0]
+    with st.container():
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Image")
+            if os.path.exists(bbox["image_path"]):
+                image = Image.open(bbox["image_path"]).convert("RGB")
+                draw = ImageDraw.Draw(image)
+                # bbox format: [x_start, y_start, x_end, y_end] normalized (0-1)
+                if bbox["bbox"]:
+                    w, h = image.size
+                    x_start, y_start, x_end, y_end = bbox["bbox"]
+                    # Convert normalized coordinates to pixel values
+                    box = [x_start * w, y_start * h, x_end * w, y_end * h]
+                    draw.rectangle(box, outline="red", width=3)
+                st.image(image, caption=bbox["image_path"], use_column_width=True)
+            else:
+                st.error(f"Image not found: {bbox['image_path']}")
+
+        with col2:
+            st.subheader("Annotation")
+            bbox_annotations = {
+                "bbox_id": bbox["bbox_id"],
+                "image_path": bbox["image_path"],
+            }
+            for __, row in class_df.iterrows():
+                label = row["class_name"]
+                options = row["class_labels"]
+                selected = st.selectbox(
+                    label=label,
+                    options=options,
+                    key=f"{bbox['bbox_id']}_{label}",
+                )
+                bbox_annotations[label] = selected
+
+            # Next button to save and move to next bbox
+            if st.button("Save & Next", key=f"save_next_{bbox['bbox_id']}"):
+                # Append annotation to CSV
+                save_path = Path("data") / image_dir / "annotations.csv"
+                df = pd.DataFrame([bbox_annotations])
+                if save_path.exists():
+                    df.to_csv(save_path, mode="a", header=False, index=False)
                 else:
-                    st.error(f"Image not found: {bbox['image_path']}")
-
-            with col2:
-                st.subheader("Annotation")
-                bbox_annotations = {"bbox_id": bbox["bbox_id"], "image_path": bbox["image_path"]}
-                # For each class, show a selectbox for annotation
-                for __, row in class_df.iterrows():
-                    label = row["class_name"]
-                    options = row["class_labels"]
-                    selected = st.selectbox(
-                        label=label, options=options, key=f"{bbox['bbox_id']}_{label}"
-                    )
-                    bbox_annotations[label] = selected
-                annotations.append(bbox_annotations)
-
-        # Button to save all annotations
-        if st.button("Save annotations"):
-            # Save to CSV in the image directory
-            df = pd.DataFrame(annotations)
-            save_path = os.path.join("data", image_dir, "annotations.csv")
-            df.to_csv(save_path, index=False)
-            st.success(f"Annotations saved to {save_path}")
+                    df.to_csv(save_path, mode="w", header=True, index=False)
+                st.rerun()
