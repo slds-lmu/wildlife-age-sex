@@ -1,0 +1,53 @@
+{
+    "overall": {
+        "precision": 0.7554219365540121,
+        "recall": 0.7615384615384615,
+        "f1-score": 0.7563273590029443,
+        "accuracy": 0.7615384615384615,
+        "confusion_matrix": {
+            "male_male": 40,
+            "male_female": 9,
+            "male_unknown": 2,
+            "female_male": 12,
+            "female_female": 55,
+            "female_unknown": 1,
+            "unknown_male": 1,
+            "unknown_female": 6,
+            "unknown_unknown": 4
+        }
+    },
+    "is_summer: False": {
+        "precision": 0.6973803071364048,
+        "recall": 0.7439024390243902,
+        "f1-score": 0.7198307904704592,
+        "accuracy": 0.7439024390243902,
+        "confusion_matrix": {
+            "male_male": 19,
+            "male_female": 6,
+            "male_unknown": 1,
+            "female_male": 8,
+            "female_female": 42,
+            "female_unknown": 0,
+            "unknown_male": 0,
+            "unknown_female": 6,
+            "unknown_unknown": 0
+        }
+    },
+    "is_summer: True": {
+        "precision": 0.7948050213675214,
+        "recall": 0.7916666666666666,
+        "f1-score": 0.7914438502673796,
+        "accuracy": 0.7916666666666666,
+        "confusion_matrix": {
+            "male_male": 21,
+            "male_female": 3,
+            "male_unknown": 1,
+            "female_male": 4,
+            "female_female": 13,
+            "female_unknown": 1,
+            "unknown_male": 1,
+            "unknown_female": 0,
+            "unknown_unknown": 4
+        }
+    }
+}

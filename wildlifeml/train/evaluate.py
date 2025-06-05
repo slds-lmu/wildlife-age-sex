@@ -68,11 +68,10 @@ def evaluate_model(
     # Get raw numeric indices
     category_to_idx = {cat: idx for idx, cat in enumerate(classes)}
     labels = test_data[target_column].map(category_to_idx).values
-    logging.debug(f"Label distribution: {np.bincount(labels)}")
+    print(np.isnan(labels).sum())
 
     logging.info("Generating predictions...")
     predictions = _get_predictions(model, test_data["image"].values)
-    logging.debug(f"Prediction distribution: {np.bincount(predictions)}")
 
     logging.info("Calculating overall metrics...")
     results["overall"] = _get_metrics(labels, predictions, category_to_idx)
@@ -85,12 +84,9 @@ def evaluate_model(
             subset_labels = labels[test_data[stratify_by] == val]
             subset_predictions = predictions[test_data[stratify_by] == val]
             logging.debug(f"Stratum {val}: {len(subset_labels)} samples")
-            results[stratify_by + ": " + str(val)] = _get_metrics(
-                subset_labels, subset_predictions, category_to_idx
-            )
-            logging.info(
-                f"{val} accuracy: {results[stratify_by + '_' + str(val)]['accuracy']:.3f}"
-            )
+            stratum_key = f"{stratify_by}: {val}"
+            results[stratum_key] = _get_metrics(subset_labels, subset_predictions, category_to_idx)
+            logging.info(f"{val} accuracy: {results[stratum_key]['accuracy']:.3f}")
 
     return results
 

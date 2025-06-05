@@ -19,6 +19,7 @@ def main(
     test_filepath: str,
     model_dir: str,
     target_column: str,
+    classes: list[str],
     stratify_by: str | None = None,
     **kwargs,
 ):
@@ -29,7 +30,7 @@ def main(
     model = load(filepath=Path(working_dir) / Path(model_dir) / "model.keras")
 
     # Evaluate model
-    results = evaluate_model(model, test_data, target_column, stratify_by)
+    results = evaluate_model(model, test_data, target_column, classes, stratify_by)
 
     # Save results
     timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")

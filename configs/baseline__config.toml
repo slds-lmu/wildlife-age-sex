@@ -50,7 +50,7 @@ stratify_by = "Sex"
 
 [train] #REQUIRED
 
-# Name of a pretrained keras model (or path to pretrained *.keras model) 
+# Name of a pretrained keras model (or path to pretrained *.keras/*.hd5 model) 
 # Or one of ["resnet50v2", "inception_resnet_v2", "vgg19", "xception", "densenet121", "densenet201"]
 backbone_model = "resnet50v2" 
 
