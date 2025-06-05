@@ -29,7 +29,8 @@ def evaluate_model(
     model: Sequential,
     test_data: pd.DataFrame,
     target_column: str,
-    stratify_by: str = "age",
+    classes: list[str],
+    stratify_by: str | None = None,
 ) -> dict:
     """Evaluate a model on a test dataset. Optionally stratify
     evaluation by the provided metadatacolumn.
@@ -65,8 +66,7 @@ def evaluate_model(
 
     # Calculate overall metrics
     # Get raw numeric indices
-    categories = test_data[target_column].unique()
-    category_to_idx = {cat: idx for idx, cat in enumerate(sorted(categories))}
+    category_to_idx = {cat: idx for idx, cat in enumerate(classes)}
     labels = test_data[target_column].map(category_to_idx).values
     logging.debug(f"Label distribution: {np.bincount(labels)}")
 
@@ -75,7 +75,7 @@ def evaluate_model(
     logging.debug(f"Prediction distribution: {np.bincount(predictions)}")
 
     logging.info("Calculating overall metrics...")
-    results["overall"] = _get_metrics(labels, predictions)
+    results["overall"] = _get_metrics(labels, predictions, category_to_idx)
     logging.info(f"Overall accuracy: {results['overall']['accuracy']:.3f}")
 
     # Calculate stratified metrics if requested
@@ -86,10 +86,10 @@ def evaluate_model(
             subset_predictions = predictions[test_data[stratify_by] == val]
             logging.debug(f"Stratum {val}: {len(subset_labels)} samples")
             results[stratify_by + ": " + str(val)] = _get_metrics(
-                subset_labels, subset_predictions
+                subset_labels, subset_predictions, category_to_idx
             )
             logging.info(
-                f"{val} accuracy: {results[stratify_by + "_" + str(val)]['accuracy']:.3f}"
+                f"{val} accuracy: {results[stratify_by + '_' + str(val)]['accuracy']:.3f}"
             )
 
     return results
@@ -101,13 +101,20 @@ def _get_predictions(model: Sequential, input_data: np.ndarray) -> np.ndarray:
     return np.argmax(predictions, axis=1)  # Convert probabilities to class labels
 
 
-def _get_metrics(labels: np.ndarray, predictions: np.ndarray) -> dict:
+def _get_metrics(labels: np.ndarray, predictions: np.ndarray, category_to_idx: dict) -> dict:
     """Helper function to calculate all evaluation metrics."""
-    # Convert confusion matrix to dict with row/col indices as keys
+    # Convert confusion matrix to dict with original labels as keys
     cm = confusion_matrix(labels, predictions)
     logging.debug(f"Confusion matrix shape: {cm.shape}")
+
+    # Create reverse mapping from indices to original labels
+    idx_to_category = {idx: cat for cat, idx in category_to_idx.items()}
+
+    # Convert confusion matrix to dict with original labels
     cm_dict = {
-        f"{i}_{j}": int(cm[i, j])  # Convert to int for JSON serialization
+        f"{idx_to_category[i]}_{idx_to_category[j]}": int(
+            cm[i, j]
+        )  # Convert to int for JSON serialization
         for i in range(cm.shape[0])
         for j in range(cm.shape[1])
     }

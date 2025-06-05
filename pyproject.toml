@@ -62,5 +62,18 @@ args = [
     {name="CONFIG_PATH", options=["-c", "--config"], default="configs/test__config.toml", help="Path to config file relative to wd."}
 ]
 
+[dependency-groups]
+frontend = [
+    "streamlit>=1.22.0",
+    "pandas>=2.0.0",
+    "pyarrow>=14.0.1",
+    "pillow>=10.0.0",
+    "plotly>=5.18.0",
+    "numpy>=1.24.0",
+    "matplotlib",
+]
+
+
+
 
 
