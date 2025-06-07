@@ -104,6 +104,7 @@ def render_coding_interface(image_dir: str, annotations_path: str, class_df: pd.
     unlabeled_bboxes = get_bboxes_to_code(annotations_path, bboxes)
 
     if not unlabeled_bboxes:
+        st.error("No bounding boxes to annotate.")
         return
 
     bbox = unlabeled_bboxes[0]
@@ -145,7 +146,7 @@ def load_bbox_results(image_dir: str):
     results = []
     for key, value in bbox_data.items():
         result = {
-            "image_path": value.get("file"),
+            "image_path": Path("data") / image_dir / value.get("file"),
             "bbox": value.get("bbox"),
             "category": value.get("category"),
             "confidence": value.get("confidence"),
@@ -170,7 +171,11 @@ def get_bboxes_to_code(annotations_path: str, bboxes: list):
         st.success("All bounding boxes annotated!")
         return None
     else:
-        return [bbox for bbox in bboxes if bbox["bbox_id"] not in existing_annotations]
+        return [
+            bbox
+            for bbox in bboxes
+            if bbox["bbox_id"] not in existing_annotations and os.path.exists(bbox["image_path"])
+        ]
 
 
 def render_bbox_image(bbox: dict):
@@ -180,11 +185,12 @@ def render_bbox_image(bbox: dict):
         # bbox format: [x_start, y_start, x_end, y_end] normalized (0-1)
         if bbox["bbox"]:
             w, h = image.size
-            x_start, y_start, x_end, y_end = bbox["bbox"]
-            # Convert normalized coordinates to pixel values
-            box = [x_start * w, y_start * h, x_end * w, y_end * h]
+            # Unpack coordinates assuming format is [x_min, y_min, width, height]
+            x_min, y_min, width, height = bbox["bbox"]
+            # Convert coordinates to pixel values
+            box = [x_min * w, y_min * h, (x_min + width) * w, (y_min + height) * h]
             draw.rectangle(box, outline="red", width=3)
-        st.image(image, caption=bbox["image_path"], use_column_width=True)
+        st.image(image, caption=bbox["image_path"], use_container_width=True)
     else:
         st.error(f"Image not found: {bbox['image_path']}")
 
