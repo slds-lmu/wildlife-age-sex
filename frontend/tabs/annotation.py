@@ -62,9 +62,8 @@ def render_config_picker():
         # Store config in session_state before rerun
         st.session_state.class_df = class_df
         st.session_state.image_dir = image_dir
-        st.session_state.annotations_path = (
-            annotations_path := Path("data") / image_dir / "annotations.csv"
-        )
+        annotations_path = Path("data") / image_dir / "annotations.csv"
+        st.session_state.annotations_path = annotations_path
         if os.path.exists(annotations_path):
             confirm_overwrite(annotations_path)
         else:
@@ -182,7 +181,6 @@ def render_bbox_image(bbox: dict):
     if os.path.exists(bbox["image_path"]):
         image = Image.open(bbox["image_path"]).convert("RGB")
         draw = ImageDraw.Draw(image)
-        # bbox format: [x_start, y_start, x_end, y_end] normalized (0-1)
         if bbox["bbox"]:
             w, h = image.size
             # Unpack coordinates assuming format is [x_min, y_min, width, height]

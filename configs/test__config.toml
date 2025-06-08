@@ -35,7 +35,7 @@ classes = ["male", "female", "unknown"]
     # directory to use for log files. To stream logs to console, comment out or delete this param.
     log_dir = "logs"
     # One of ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-    log_level = "INFO" 
+    log_level = "DEBUG" 
 
 [preprocess] #OPTIONAL
 

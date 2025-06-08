@@ -139,9 +139,10 @@ def get_absolute_coords(
     # Convert proportional coordinates to absolute pixel values
     height, width = image_shape
     logging.debug(f"Converting coordinates for image shape: {image_shape}")
-    x_coords = int(bbox_coords[0] * width), int(bbox_coords[2] * width)
-    y_coords = int(bbox_coords[1] * height), int(bbox_coords[3] * height)
     # Return x range, y range
+    x_min, y_min, box_width, box_height = bbox_coords
+    x_coords = (int(x_min * width), int((x_min + box_width) * width))
+    y_coords = (int(y_min * height), int((y_min + box_height) * height))
     result = (min(x_coords), max(x_coords)), (min(y_coords), max(y_coords))
     logging.debug(f"Converted coordinates - x: {result[0]}, y: {result[1]}")
     return result

@@ -17,5 +17,16 @@
         "transfer_patience": 10,
         "finetune_patience": 10
     },
+    "n_train_observations": 19,
+    "class_mappings": {
+        "male": 0,
+        "female": 1,
+        "unknown": 2
+    },
+    "class_distribution": {
+        "male": 9,
+        "female": 6,
+        "unknown": 4
+    },
     "model_summary": "Model: \"sequential\"\n_________________________________________________________________\n Layer (type)                Output Shape              Param #   \n=================================================================\n lambda (Lambda)             (None, 224, 224, 3)       0         \n                                                                 \n resnet50v2 (Functional)     (None, 2048)              23564800  \n                                                                 \n dense (Dense)               (None, 3)                 6147      \n                                                                 \n=================================================================\nTotal params: 23,570,947\nTrainable params: 6,147\nNon-trainable params: 23,564,800\n_________________________________________________________________"
 }
