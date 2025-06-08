@@ -1,5 +1,10 @@
 {
     "overall": {
+        "n_test_observations": 4,
+        "class_distribution": {
+            "0": 2,
+            "1": 2
+        },
         "precision": 0.25,
         "recall": 0.5,
         "f1-score": 0.3333333333333333,
@@ -12,6 +17,10 @@
         }
     },
     "0": {
+        "n_test_observations": 1,
+        "class_distribution": {
+            "0": 1
+        },
         "precision": 1.0,
         "recall": 1.0,
         "f1-score": 1.0,
@@ -21,6 +30,10 @@
         }
     },
     "3": {
+        "n_test_observations": 1,
+        "class_distribution": {
+            "0": 1
+        },
         "precision": 0.0,
         "recall": 0.0,
         "f1-score": 0.0,
@@ -33,6 +46,10 @@
         }
     },
     "4": {
+        "n_test_observations": 1,
+        "class_distribution": {
+            "0": 1
+        },
         "precision": 1.0,
         "recall": 1.0,
         "f1-score": 1.0,
@@ -42,6 +59,10 @@
         }
     },
     "2": {
+        "n_test_observations": 1,
+        "class_distribution": {
+            "0": 1
+        },
         "precision": 0.0,
         "recall": 0.0,
         "f1-score": 0.0,

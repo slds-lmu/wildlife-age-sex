@@ -120,6 +120,8 @@ def _get_metrics(labels: np.ndarray, predictions: np.ndarray, category_to_idx: d
     }
 
     metrics = {
+        "n_test_observations": len(labels),
+        "class_distribution": {pd.Series(labels).value_counts().to_dict()},
         "precision": precision_score(labels, predictions, average="weighted", zero_division=0),
         "recall": recall_score(labels, predictions, average="weighted", zero_division=0),
         "f1-score": f1_score(labels, predictions, average="weighted", zero_division=0),

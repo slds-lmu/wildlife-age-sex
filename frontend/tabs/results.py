@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 from sklearn.metrics import ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 
 def plot_confusion_matrix(cm_dict, labels=None):
@@ -108,9 +109,19 @@ def get_models():
 def load_model_results(model_name):
     """Load evaluation results for a specific model."""
     model_dir = Path("models") / model_name
-    results_file = next(model_dir.glob("*__eval_results.json"))
-    with open(results_file) as f:
-        return json.load(f)
+    results_files = sorted(model_dir.glob("*__eval_results.json"), key=lambda x: x.name)
+    print(results_files)
+    results = []
+    for results_file in results_files:
+        with open(results_file) as f:
+            result = json.load(f)
+        # Convert timestamp to human readable format
+        timestamp = results_file.name.replace("__eval_results.json", "")
+        formatted_date = datetime.strptime(timestamp, "%Y%m%dT%H%M%S").strftime(
+            "%B %d, %Y at %I:%M:%S"
+        )
+        results.append((formatted_date, result))
+    return results
 
 
 def load_training_specs(model_name):
@@ -125,32 +136,52 @@ def render_results(model):
     """Render evaluation results for a specific model."""
     try:
         results = load_model_results(model)
-
-        # Display overall metrics
-        display_metrics(results["overall"], "Overall Performance")
-
-        # Display overall confusion matrix
-        st.subheader("Overall Confusion Matrix")
-        st.pyplot(plot_confusion_matrix(results["overall"]["confusion_matrix"]))
-
-        # Display stratified results
-        st.subheader("Stratified Results")
-        metric = st.selectbox(
-            "Select metric to display", ["accuracy", "precision", "recall", "f1-score"]
-        )
-        st.plotly_chart(plot_stratified_results(results, metric))
-
-        # Display detailed stratified metrics
-        st.subheader("Detailed Stratified Metrics")
-        for stratum, metrics in results.items():
-            if stratum != "overall":
-                st.write(f"### {stratum}")
-                display_metrics(metrics)
-                st.pyplot(plot_confusion_matrix(metrics["confusion_matrix"]))
-
     except Exception as e:
         st.error(f"Error loading results: {e}")
         logging.error(f"Error loading results: {e}")
+
+    for eval_run, result in results:
+        with st.expander(f"**{eval_run}**"):
+            st.write("#### Class Distribution")
+            st.write(
+                f"Test set contained {result['overall']['n_test_observations']} observations."
+            )
+            class_dist = result["overall"]["class_distribution"]
+            fig = px.treemap(
+                names=list(class_dist.keys()),
+                parents=["Test Data"] * len(class_dist),
+                values=list(class_dist.values()),
+                title="Test Data Class Distribution",
+            )
+            fig.update_layout(width=800, height=400)
+            st.plotly_chart(fig)
+            # Display overall metrics
+            display_metrics(result["overall"], "Overall Performance")
+
+            # Display overall confusion matrix
+            st.subheader("Overall Confusion Matrix")
+            st.pyplot(plot_confusion_matrix(result["overall"]["confusion_matrix"]))
+
+            # Display stratified results
+            st.subheader("Stratified Results")
+            st.write("Select a metric to display")
+            metric = st.selectbox(
+                label=f"{eval_run.replace(' ', '_')}__metric",
+                options=["accuracy", "precision", "recall", "f1-score"],
+                label_visibility="hidden",
+            )
+            st.plotly_chart(
+                plot_stratified_results(result, metric),
+                key=f"{eval_run.replace(' ', '_')}__stratified_results",
+            )
+
+            # Display detailed stratified metrics
+            st.subheader("Detailed Stratified Metrics")
+            for stratum, metrics in result.items():
+                if stratum != "overall":
+                    st.write(f"### {stratum}")
+                    display_metrics(metrics)
+                    st.pyplot(plot_confusion_matrix(metrics["confusion_matrix"]))
 
 
 def render_training_specs(model):
@@ -160,6 +191,18 @@ def render_training_specs(model):
 
         # Display training parameters
         st.subheader("Training Parameters")
+        # Display class distribution
+        st.write("#### Class Distribution")
+        st.write(f"Training set contained {specs['n_train_observations']} observations.")
+        class_dist = specs["class_distribution"]
+        fig = px.treemap(
+            names=list(class_dist.keys()),
+            parents=["Training Data"] * len(class_dist),
+            values=list(class_dist.values()),
+            title="Training Data Class Distribution",
+        )
+        fig.update_layout(width=800, height=400)
+        st.plotly_chart(fig)
         params = specs["training_params"]
 
         # Transfer learning phase
@@ -214,6 +257,8 @@ def render_results_page():
     selected_model = st.selectbox("Select model", options=models)
 
     if st.button("View Results"):
+        st.divider()
+        st.write("### Evaluation Runs")
         render_results(selected_model)
 
         # add collapsible section for training specs
