@@ -184,6 +184,7 @@ cython_debug/
 # (https://www.tensorflow.org/tutorials/keras/save_and_load#savedmodel_format)
 
 # Large files (may exceed GitHub's size limit)
-data/
+data/*
+!data/test/
 *.parquet
 *.keras

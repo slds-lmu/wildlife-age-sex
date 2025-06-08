@@ -64,7 +64,7 @@ def tune_model(
             "earlystop_metric": earlystop_metric,
             "transfer_patience": transfer_patience,
             "finetune_patience": finetune_patience,
-        }
+        },
     }
 
     logging.info("Postprocessing inputs...")
@@ -75,6 +75,7 @@ def tune_model(
         logging.warning(
             f"Found {num_missing_images} missing images. Continuing with {len(train_data)} images."
         )
+        tuning_specs["n_train_observations"] = len(train_data)
     inputs = np.stack(train_data["image"].values).astype(np.float32)  # Convert to float32
 
     # Get labels and convert to numeric indices
@@ -84,6 +85,7 @@ def tune_model(
     # Get unique categories and create mapping
     class_mappings, labels = convert_to_numeric_indices(train_data[target_column], classes)
     tuning_specs["class_mappings"] = class_mappings
+    tuning_specs["class_distribution"] = train_data[target_column].value_counts().to_dict()
 
     loss_function = (
         BinaryCrossentropy()
