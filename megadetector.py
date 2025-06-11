@@ -26,7 +26,8 @@ def main(image_dir: str):
 
         if not len(bboxes) == len(confidences) == len(categories):
             print(
-                f"Error: {result['img_id']} has {len(bboxes)} bboxes, {len(confidences)} confidences, and {len(categories)} categories"
+                f"""Error: {result["img_id"]} has {len(bboxes)} bboxes,
+                {len(confidences)} confidences, and {len(categories)} categories"""
             )
             continue
         elif any([bboxes is None, confidences is None, categories is None]):
@@ -34,14 +35,14 @@ def main(image_dir: str):
             # Optional: send for manual check
             continue
 
-        for idx, (bbox, confidence, category) in enumerate(zip(bboxes, confidences, categories)):
+        for idx, (bbox, confidence, category) in enumerate(
+            zip(bboxes, confidences, categories, strict=True)
+        ):
             processed_results[f"{idx}__{result['img_id'].split('/')[-1]}"] = {
-                "bbox_id": f"{idx}__{result['img_id'].split('/')[-1].split('.')[0]}",  # Unique bbox id, used as image_id after cropping
-                "image_id": result["img_id"]
-                .split("/")[-1]
-                .split(".")[
-                    0
-                ],  # Unique file name, x.Station + "_" + x.Session + "_" + x.Trigger + x.Trigger_Sub
+                # Unique bbox id, used as image_id after cropping
+                "bbox_id": f"{idx}__{result['img_id'].split('/')[-1].split('.')[0]}",
+                # Unique file name, x.Station + "_" + x.Session + "_" + x.Trigger + x.Trigger_Sub
+                "image_id": result["img_id"].split("/")[-1].split(".")[0],
                 "image_path": result["img_id"],
                 "category": int(category),  # 0: animal
                 "bbox": [round(float(i), 4) for i in bbox],

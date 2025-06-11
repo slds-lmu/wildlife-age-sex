@@ -1,0 +1,71 @@
+{
+    "overall": {
+        "n_test_observations": 150,
+        "class_distribution": {
+            "female": 83,
+            "male": 53,
+            "unknown": 14
+        },
+        "precision": 0.7061196581196582,
+        "recall": 0.72,
+        "f1-score": 0.6963348751156337,
+        "accuracy": 0.72,
+        "confusion_matrix": {
+            "male_male": 28,
+            "male_female": 23,
+            "male_unknown": 2,
+            "female_male": 5,
+            "female_female": 77,
+            "female_unknown": 1,
+            "unknown_male": 6,
+            "unknown_female": 5,
+            "unknown_unknown": 3
+        }
+    },
+    "is_summer: False": {
+        "n_test_observations": 80,
+        "class_distribution": {
+            "female": 44,
+            "male": 30,
+            "unknown": 6
+        },
+        "precision": 0.7315092165898618,
+        "recall": 0.7,
+        "f1-score": 0.6703945111492282,
+        "accuracy": 0.7,
+        "confusion_matrix": {
+            "male_male": 12,
+            "male_female": 16,
+            "male_unknown": 2,
+            "female_male": 2,
+            "female_female": 42,
+            "female_unknown": 0,
+            "unknown_male": 0,
+            "unknown_female": 4,
+            "unknown_unknown": 2
+        }
+    },
+    "is_summer: True": {
+        "n_test_observations": 70,
+        "class_distribution": {
+            "female": 39,
+            "male": 23,
+            "unknown": 8
+        },
+        "precision": 0.7209169435215946,
+        "recall": 0.7428571428571429,
+        "f1-score": 0.7175145180023229,
+        "accuracy": 0.7428571428571429,
+        "confusion_matrix": {
+            "male_male": 16,
+            "male_female": 7,
+            "male_unknown": 0,
+            "female_male": 3,
+            "female_female": 35,
+            "female_unknown": 1,
+            "unknown_male": 6,
+            "unknown_female": 1,
+            "unknown_unknown": 1
+        }
+    }
+}

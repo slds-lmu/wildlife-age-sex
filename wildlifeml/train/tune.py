@@ -75,13 +75,13 @@ def tune_model(
         logging.warning(
             f"Found {num_missing_images} missing images. Continuing with {len(train_data)} images."
         )
-        tuning_specs["n_train_observations"] = len(train_data)
+    tuning_specs["n_train_observations"] = len(train_data)
     inputs = np.stack(train_data["image"].values).astype(np.float32)  # Convert to float32
 
     # Get labels and convert to numeric indices
-    assert target_column in train_data.columns, (
-        f"Target column {target_column} not found in train_data"
-    )
+    assert (
+        target_column in train_data.columns
+    ), f"Target column {target_column} not found in train_data"
     # Get unique categories and create mapping
     class_mappings, labels = convert_to_numeric_indices(train_data[target_column], classes)
     tuning_specs["class_mappings"] = class_mappings

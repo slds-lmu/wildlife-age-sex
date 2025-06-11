@@ -17,10 +17,16 @@
         "transfer_patience": 10,
         "finetune_patience": 10
     },
+    "n_train_observations": 600,
     "class_mappings": {
         "male": 0,
         "female": 1,
         "unknown": 2
+    },
+    "class_distribution": {
+        "female": 334,
+        "male": 209,
+        "unknown": 57
     },
     "model_summary": "Model: \"sequential_2\"\n_________________________________________________________________\n Layer (type)                Output Shape              Param #   \n=================================================================\n lambda_1 (Lambda)           (None, None, None, None)  0         \n                                                                 \n xception (Functional)       (None, 2048)              20861480  \n                                                                 \n dense_1 (Dense)             (None, 18)                36882     \n                                                                 \n dense (Dense)               (None, 3)                 57        \n                                                                 \n=================================================================\nTotal params: 20,898,419\nTrainable params: 57\nNon-trainable params: 20,898,362\n_________________________________________________________________"
 }

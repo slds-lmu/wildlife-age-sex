@@ -1,0 +1,32 @@
+{
+    "training_params": {
+        "loss_function": "binary_crossentropy",
+        "transfer_epochs": 10,
+        "finetune_epochs": 10,
+        "transfer_optimizer": {
+            "name": "adam",
+            "learning_rate": 0.01
+        },
+        "finetune_optimizer": {
+            "name": "adam",
+            "learning_rate": 0.001
+        },
+        "finetune_layers": 3,
+        "batch_size": 32,
+        "earlystop_metric": "val_loss",
+        "transfer_patience": 10,
+        "finetune_patience": 10
+    },
+    "n_train_observations": 600,
+    "class_mappings": {
+        "male": 0,
+        "female": 1,
+        "unknown": 2
+    },
+    "class_distribution": {
+        "female": 334,
+        "male": 209,
+        "unknown": 57
+    },
+    "model_summary": "Model: \"sequential_2\"\n_________________________________________________________________\n Layer (type)                Output Shape              Param #   \n=================================================================\n lambda_1 (Lambda)           (None, None, None, None)  0         \n                                                                 \n xception (Functional)       (None, 2048)              20861480  \n                                                                 \n dense_1 (Dense)             (None, 18)                36882     \n                                                                 \n dense (Dense)               (None, 3)                 57        \n                                                                 \n=================================================================\nTotal params: 20,898,419\nTrainable params: 20,843,891\nNon-trainable params: 54,528\n_________________________________________________________________"
+}
