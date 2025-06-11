@@ -154,7 +154,7 @@ def render_results(model):
                 title="Test Data Class Distribution",
             )
             fig.update_layout(width=800, height=400)
-            st.plotly_chart(fig)
+            st.plotly_chart(fig, key=f"{eval_run.replace(' ', '_')}__class_distribution")
             # Display overall metrics
             display_metrics(result["overall"], "Overall Performance")
 
@@ -202,7 +202,7 @@ def render_training_specs(model):
             title="Training Data Class Distribution",
         )
         fig.update_layout(width=800, height=400)
-        st.plotly_chart(fig)
+        st.plotly_chart(fig, key=f"{model.replace(' ', '_')}__training_class_distribution")
         params = specs["training_params"]
 
         # Transfer learning phase
