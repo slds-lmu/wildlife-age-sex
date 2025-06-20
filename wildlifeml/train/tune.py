@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from ..utils_torch import convert_to_numeric_indices, get_model_summary
+from ..utils import convert_to_numeric_indices, get_model_summary
 
 
 def tune_model(
@@ -197,9 +197,7 @@ def do_transfer_learning(
         if optimizer_name == "adam"
         else SGD(model.classifier.parameters(), lr=learning_rate)
     )
-    scheduler = ReduceLROnPlateau(
-        optimizer, mode="min", patience=patience, factor=0.1, verbose=True
-    )
+    scheduler = ReduceLROnPlateau(optimizer, mode="min", patience=patience, factor=0.1)
 
     best_val_loss = float("inf")
     patience_counter = 0
@@ -276,9 +274,7 @@ def do_finetuning(
         if optimizer_name == "adam"
         else SGD(trainable_params, lr=learning_rate)
     )
-    scheduler = ReduceLROnPlateau(
-        optimizer, mode="min", patience=patience, factor=0.1, verbose=True
-    )
+    scheduler = ReduceLROnPlateau(optimizer, mode="min", patience=patience, factor=0.1)
 
     best_val_loss = float("inf")
     patience_counter = 0

@@ -1,0 +1,20 @@
+{
+    "Bird_spec": 0,
+    "Canis_lupus": 1,
+    "Capreolus_capreolus": 2,
+    "Cervus_elaphus": 3,
+    "Domestic_cat": 4,
+    "Domestic_dog": 5,
+    "Domestic_horse": 6,
+    "Domestic_sheep": 7,
+    "Empty": 8,
+    "Felis_silvestris": 9,
+    "Lepus_europaeus": 10,
+    "Martes_spec": 11,
+    "Meles_meles": 12,
+    "Other_mammal": 13,
+    "Sciurus_vulgaris": 14,
+    "Sus_scrofa": 15,
+    "Vulpes_vulpes": 16
+}
+
