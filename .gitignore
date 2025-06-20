@@ -189,4 +189,6 @@ cython_debug/
 data/*
 !data/test/
 *.parquet
-*.keras
+# keep error tables from evaluation
+!models/**/*.parquet
+
