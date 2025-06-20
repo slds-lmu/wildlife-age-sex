@@ -10,7 +10,7 @@ os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # Disable oneDNN warnings
 
 import tomli
 
-from wildlifeml.io import load, save
+from wildlifeml.io import load, save, load_model
 from wildlifeml.train import evaluate_model
 
 
@@ -18,6 +18,7 @@ def main(
     working_dir: str,
     test_filepath: str,
     model_dir: str,
+    backbone_model: str,
     target_column: str,
     classes: list[str],
     stratify_by: str | None = None,
@@ -27,16 +28,22 @@ def main(
     test_data = load(filepath=Path(working_dir) / Path(test_filepath))
 
     # Load model
-    model = load(filepath=Path(working_dir) / Path(model_dir) / "model.keras")
+    model = load_model(
+        backbone_model, len(classes), weights_path=Path(working_dir) / Path(model_dir) / "model.pt"
+    )
 
     # Evaluate model
-    results = evaluate_model(model, test_data, target_column, classes, stratify_by)
+    results, errors = evaluate_model(model, test_data, target_column, classes, stratify_by)
 
     # Save results
     timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
     save(
         results,
         filepath=Path(working_dir) / Path(model_dir) / f"{timestamp}__eval_results.json",
+    )
+    save(
+        errors,
+        filepath=Path(working_dir) / Path(model_dir) / f"{timestamp}__eval_errors.parquet",
     )
 
 
@@ -54,5 +61,6 @@ if __name__ == "__main__":
         **args["globals"],
         **args["io"]["model"],
         **args["io"]["data"],
+        backbone_model=args["train"]["backbone_model"],
         **args["evaluate"],
     )

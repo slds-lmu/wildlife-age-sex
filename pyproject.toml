@@ -19,7 +19,6 @@ dependencies = [
     "ruff>=0.11.6",
     "scikit-learn>=1.6.1",
     "scipy>=1.15.2",
-    "tensorflow==2.10.0",
     "tomli>=2.2.1",
     "torch>=2.6.0",
     "torchvision>=0.21.0",
@@ -54,6 +53,7 @@ args = [
 
 [tool.poe.tasks.run-pipeline]
 shell = """
+    uv sync 
     uv run scripts/preprocess.py --config $CONFIG_PATH && \
     uv run scripts/train.py --config $CONFIG_PATH && \
     uv run scripts/evaluate.py --config $CONFIG_PATH
@@ -62,9 +62,15 @@ args = [
     {name="CONFIG_PATH", options=["-c", "--config"], default="configs/test__config.toml", help="Path to config file relative to wd."}
 ]
 
+[tool.poe.tasks.build-frontend]
+shell = """
+    uv sync --only-group frontend
+    uv run streamlit run frontend/app.py --server.address localhost --server.port 8501
+"""
+
 [dependency-groups]
 frontend = [
-    "streamlit>=1.22.0",
+    "streamlit==1.46.0",
     "pandas>=2.0.0",
     "pyarrow>=14.0.1",
     "pillow>=10.0.0",

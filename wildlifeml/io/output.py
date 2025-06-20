@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
-import tensorflow as tf
+import torch
 from PIL import Image
 import json
 
@@ -20,8 +20,8 @@ def save(content: dict | str | pd.DataFrame, filepath: str | Path):
         if "image" in content.columns:
             content = postprocess_image_data(content, filepath)
         content.to_parquet(filepath)
-    elif isinstance(content, tf.keras.Model):
-        content.save(filepath)
+    elif isinstance(content, torch.nn.Module):
+        torch.save(content.state_dict(), filepath)
     elif isinstance(content, dict):
         filepath.parent.mkdir(parents=True, exist_ok=True)
         with open(filepath, "w") as f:

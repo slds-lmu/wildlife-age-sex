@@ -9,7 +9,7 @@ os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # Disable oneDNN warnings
 
 import tomli
 
-from wildlifeml.io import load, load_backbone_model, save
+from wildlifeml.io import load_model, load, save
 from wildlifeml.train import tune_model
 
 
@@ -26,14 +26,14 @@ def main(
     train_data = load(filepath=Path(working_dir) / Path(train_filepath))
 
     # Train model
-    model = load_backbone_model(**training_args, num_classes=len(classes), mode="keras")
+    model = load_model(**training_args, num_classes=len(classes))
     tuned_model, tuning_specs = tune_model(
         model, train_data, target_column, classes, **training_args
     )
 
     # Save model
     save(tuning_specs, filepath=Path(working_dir) / Path(model_dir) / "tuning_specs.json")
-    save(tuned_model, filepath=Path(working_dir) / Path(model_dir) / "model.keras")
+    save(tuned_model, filepath=Path(working_dir) / Path(model_dir) / "model.pt")
 
 
 if __name__ == "__main__":

@@ -1,35 +1,23 @@
-from typing import Literal
 import logging
-import numpy as np
-from ..utils import convert_to_numeric_indices, get_model_summary
+from typing import Literal
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
+from torch.optim import Adam, SGD
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.optimizers import Adam, SGD, Optimizer
-from tensorflow.keras.losses import BinaryCrossentropy, SparseCategoricalCrossentropy, Loss
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
-
-# Configure all GPUs to use memory growth
-gpus = tf.config.experimental.list_physical_devices("GPU")
-if gpus:
-    try:
-        # Set memory growth for all GPUs
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        logging.info(f"Found {len(gpus)} GPU(s). Memory growth enabled.")
-    except RuntimeError as e:
-        logging.error(f"GPU configuration error: {e}")
+from ..utils_torch import convert_to_numeric_indices, get_model_summary
 
 
 def tune_model(
-    model,
+    model: nn.Module,
     train_data,
     target_column: str,
     classes: list[str],
     batch_size: int,
     loss_function: Literal[
         "binary_crossentropy", "categorical_crossentropy"
-    ] = "binary_crossentropy",
+    ] = "categorical_crossentropy",
     transfer_epochs: int = 10,
     finetune_epochs: int = 10,
     transfer_optimizer: Literal["adam", "sgd"] = "adam",
@@ -41,10 +29,58 @@ def tune_model(
     transfer_patience: int = 10,
     finetune_patience: int = 10,
     num_workers: int = 0,
-    eval_metrics: list | None = None,
+    device: str = "cuda" if torch.cuda.is_available() else "cpu",
     **kwargs,
 ):
-    # Postprocess inputs
+    """
+    Train a model using transfer learning and finetuning.
+
+    Args:
+    -----
+    model: nn.Module
+        The model to train.
+    train_data: pd.DataFrame
+        The training data.
+    target_column: str
+        The column in train_data that contains the target variable.
+    classes: list[str]
+        The classes in the target variable.
+    batch_size: int
+        The batch size to use for training.
+    loss_function: Literal["binary_crossentropy", "categorical_crossentropy"]
+        The loss function to use.
+    transfer_epochs: int
+        The number of epochs to use for transfer learning.
+    finetune_epochs: int
+        The number of epochs to use for finetuning.
+    transfer_optimizer: Literal["adam", "sgd"]
+        The optimizer to use for transfer learning.
+    transfer_learning_rate: float
+        The learning rate to use for transfer learning.
+    finetune_optimizer: Literal["adam", "sgd"]
+        The optimizer to use for finetuning.
+    finetune_learning_rate: float
+        The learning rate to use for finetuning.
+    finetune_layers: int
+        The number of layers of the base model to finetune. All classifier layers are also trainable in this step.
+    earlystop_metric: str
+        The metric to use for early stopping.
+    transfer_patience: int
+        The number of epochs to wait before early stopping transfer learning.
+    finetune_patience: int
+        The number of epochs to wait before early stopping finetuning.
+    num_workers: int
+        The number of workers to use for training.
+    device: str
+        The device to use for training.
+    **kwargs: dict
+        Additional keyword arguments to pass to the model.
+
+    Returns:
+    --------
+    tuple[nn.Module, dict]
+        The trained model and the tuning specifications.
+    """
     # Collect tuning specifications
     tuning_specs = {
         "training_params": {
@@ -68,7 +104,7 @@ def tune_model(
     }
 
     logging.info("Postprocessing inputs...")
-    # Convert images to numpy array
+    # Convert images to tensor
     num_missing_images = sum([img is None for img in train_data["image"]])
     if num_missing_images > 0:
         train_data = train_data[train_data["image"].notna()]
@@ -76,164 +112,221 @@ def tune_model(
             f"Found {num_missing_images} missing images. Continuing with {len(train_data)} images."
         )
     tuning_specs["n_train_observations"] = len(train_data)
-    inputs = np.stack(train_data["image"].values).astype(np.float32)  # Convert to float32
+
+    # Stack images and convert to tensor
+    inputs = torch.stack([torch.from_numpy(img).float() for img in train_data["image"].values])
+    inputs = inputs.permute(0, 3, 1, 2)  # Convert from (N, H, W, C) to (N, C, H, W)
 
     # Get labels and convert to numeric indices
     assert (
         target_column in train_data.columns
     ), f"Target column {target_column} not found in train_data"
-    # Get unique categories and create mapping
     class_mappings, labels = convert_to_numeric_indices(train_data[target_column], classes)
     tuning_specs["class_mappings"] = class_mappings
     tuning_specs["class_distribution"] = train_data[target_column].value_counts().to_dict()
 
-    loss_function = (
-        BinaryCrossentropy()
-        if loss_function == "binary_crossentropy"
-        else SparseCategoricalCrossentropy()
+    # Convert labels to tensor
+    labels = torch.tensor(labels, dtype=torch.float)
+
+    # Create dataset and dataloader
+    dataset = TensorDataset(inputs, labels)
+    train_size = int(0.85 * len(dataset))
+    val_size = len(dataset) - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
-    transfer_optimizer = (
-        Adam(learning_rate=transfer_learning_rate)
-        if transfer_optimizer == "adam"
-        else SGD(learning_rate=transfer_learning_rate)
-    )
-    finetune_optimizer = (
-        Adam(learning_rate=finetune_learning_rate)
-        if finetune_optimizer == "adam"
-        else SGD(learning_rate=finetune_learning_rate)
+    val_loader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
 
-    # Define callbacks for transfer/finetuning
-    transfer_callbacks = [
-        EarlyStopping(
-            monitor=earlystop_metric,
-            patience=2 * transfer_patience,
-        ),
-        ReduceLROnPlateau(
-            monitor=earlystop_metric,
-            patience=transfer_patience,
-            factor=0.1,
-            verbose=1,
-        ),
-    ]
-    finetune_callbacks = [
-        EarlyStopping(
-            monitor=earlystop_metric,
-            patience=2 * finetune_patience,
-        ),
-        ReduceLROnPlateau(
-            monitor=earlystop_metric,
-            patience=finetune_patience,
-            factor=0.1,
-            verbose=1,
-        ),
-    ]
+    # Setup loss function
+    criterion = nn.BCELoss() if loss_function == "binary_crossentropy" else nn.CrossEntropyLoss()
+
+    # Move model to device
+    model = model.to(device)
 
     if transfer_epochs > 0:
         model = do_transfer_learning(
             model,
-            inputs,
-            labels,
+            train_loader,
+            val_loader,
             transfer_optimizer,
-            loss_function,
+            transfer_learning_rate,
+            criterion,
             transfer_epochs,
-            transfer_callbacks,
-            eval_metrics,
-            batch_size,
-            num_workers,
+            transfer_patience,
+            device,
         )
 
     if finetune_epochs > 0 and finetune_layers > 0:
         model = do_finetuning(
             model,
-            inputs,
-            labels,
+            train_loader,
+            val_loader,
             finetune_optimizer,
-            loss_function,
+            finetune_learning_rate,
+            criterion,
             finetune_epochs,
-            finetune_callbacks,
-            eval_metrics,
-            batch_size,
+            finetune_patience,
             finetune_layers,
-            num_workers,
+            device,
         )
+
     logging.info("Generating model summary...")
     tuning_specs["model_summary"] = get_model_summary(model)
 
-    return (model, tuning_specs)
+    return model, tuning_specs
 
 
 def do_transfer_learning(
-    model: Sequential,
-    inputs: np.ndarray,
-    labels: np.ndarray,
-    transfer_optimizer: Optimizer,
-    loss_function: Loss,
-    transfer_epochs: int = 10,
-    transfer_callbacks: list | None = None,
-    eval_metrics: list | None = None,
-    batch_size: int = 32,
-    num_workers: int = 0,
+    model: nn.Module,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    optimizer_name: str,
+    learning_rate: float,
+    criterion: nn.Module,
+    epochs: int,
+    patience: int,
+    device: str,
 ):
-    logging.info("Compiling model...")
-    model.compile(
-        optimizer=transfer_optimizer,
-        loss=loss_function,
-        metrics=eval_metrics,
+    # Setup optimizer
+    optimizer = (
+        Adam(model.classifier.parameters(), lr=learning_rate)
+        if optimizer_name == "adam"
+        else SGD(model.classifier.parameters(), lr=learning_rate)
+    )
+    scheduler = ReduceLROnPlateau(
+        optimizer, mode="min", patience=patience, factor=0.1, verbose=True
     )
 
+    best_val_loss = float("inf")
+    patience_counter = 0
+
     logging.info("Starting transfer learning...")
-    model.fit(
-        x=inputs,
-        y=labels,
-        batch_size=batch_size,
-        epochs=transfer_epochs,
-        callbacks=transfer_callbacks,
-        validation_split=0.15,
-        workers=num_workers,
-        use_multiprocessing=num_workers > 0,
-        shuffle=False,
-    )
+    for epoch in range(epochs):
+        # Training phase
+        model.train()
+        train_loss = 0
+        for inputs, labels in train_loader:
+            train_inputs, train_labels = inputs.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(train_inputs)
+            loss = criterion(outputs, train_labels)
+            loss.backward()
+            optimizer.step()
+
+            train_loss += loss.item()
+
+        # Validation phase
+        model.eval()
+        val_loss = 0
+        with torch.no_grad():
+            for inputs, labels in val_loader:
+                val_inputs, val_labels = inputs.to(device), labels.to(device)
+                outputs = model(val_inputs)
+                val_loss += criterion(outputs, val_labels).item()
+
+        # Update learning rate
+        scheduler.step(val_loss)
+
+        # Early stopping
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter >= patience:
+                logging.info(f"Early stopping at epoch {epoch}")
+                break
+
+        logging.info(
+            f"""
+            Transfer Learning Epoch {epoch}:
+            Train Loss = {train_loss / len(train_loader):.4f},
+            Val Loss = {val_loss / len(val_loader):.4f}
+            """
+        )
+
     return model
 
 
 def do_finetuning(
-    model: Sequential,
-    inputs: np.ndarray,
-    labels: np.ndarray,
-    finetune_optimizer: Optimizer,
-    loss_function: Loss,
-    finetune_epochs: int = 10,
-    finetune_callbacks: list | None = None,
-    eval_metrics: list | None = None,
-    batch_size: int = 32,
-    finetune_layers: int = 1,
-    num_workers: int = 0,
+    model: nn.Module,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    optimizer_name: str,
+    learning_rate: float,
+    criterion: nn.Module,
+    epochs: int,
+    patience: int,
+    finetune_layers: int,
+    device: str,
 ):
-    # Freeze all layers except the last finetune_layers
-    for layer in model.layers[:-finetune_layers]:
-        layer.trainable = False
     # Unfreeze the last finetune_layers
-    for layer in model.layers[-finetune_layers:]:
-        layer.trainable = True
+    for param in list(model.base.parameters())[-finetune_layers:]:
+        param.requires_grad = True
 
-    logging.info("Compiling model...")
-    model.compile(
-        optimizer=finetune_optimizer,
-        loss=loss_function,
-        metrics=eval_metrics,
+    # Setup optimizer (only for unfrozen parameters)
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
+    optimizer = (
+        Adam(trainable_params, lr=learning_rate)
+        if optimizer_name == "adam"
+        else SGD(trainable_params, lr=learning_rate)
     )
+    scheduler = ReduceLROnPlateau(
+        optimizer, mode="min", patience=patience, factor=0.1, verbose=True
+    )
+
+    best_val_loss = float("inf")
+    patience_counter = 0
 
     logging.info("Starting fine tuning...")
-    model.fit(
-        x=inputs,
-        y=labels,
-        batch_size=batch_size,
-        epochs=finetune_epochs,
-        callbacks=finetune_callbacks,
-        validation_split=0.15,
-        workers=num_workers,
-        use_multiprocessing=num_workers > 0,
-        shuffle=False,
-    )
+    for epoch in range(epochs):
+        # Training phase
+        model.train()
+        train_loss = 0
+        for inputs, labels in train_loader:
+            train_inputs, train_labels = inputs.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(train_inputs)
+            loss = criterion(outputs, train_labels)
+            loss.backward()
+            optimizer.step()
+
+            train_loss += loss.item()
+
+        # Validation phase
+        model.eval()
+        val_loss = 0
+        with torch.no_grad():
+            for inputs, labels in val_loader:
+                val_inputs, val_labels = inputs.to(device), labels.to(device)
+                outputs = model(val_inputs)
+                val_loss += criterion(outputs, val_labels).item()
+
+        # Update learning rate
+        scheduler.step(val_loss)
+
+        # Early stopping
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter >= patience:
+                logging.info(f"Early stopping at epoch {epoch}")
+                break
+
+        logging.info(
+            f"""
+            Finetuning Epoch {epoch}:
+            Train Loss = {train_loss / len(train_loader):.4f},
+            Val Loss = {val_loss / len(val_loader):.4f}
+            """
+        )
+
     return model

@@ -2,7 +2,7 @@
 
 __version__ = "0.1.0"
 
-from .io import load, load_backbone_model, save
+from .io import load, load_model, save
 from .preprocess import preprocess_data, split_data
 
-__all__ = ["load", "load_backbone_model", "preprocess_data", "save", "split_data"]
+__all__ = ["load", "load_model", "preprocess_data", "save", "split_data"]

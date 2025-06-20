@@ -33,7 +33,7 @@ classes = ["male", "female", "unknown"]
     [io.logging] #OPTIONAL
 
     # directory to use for log files. To stream logs to console, comment out or delete this param.
-    log_dir = "logs"
+    # log_dir = "logs"
     # One of ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     log_level = "DEBUG" 
 
@@ -50,9 +50,9 @@ stratify_by = "sex"
 
 [train] #REQUIRED
 
-# Name of a pretrained keras model (or path to pretrained *.keras/*.hd5 model) 
+# Name of a pretrained PyTorch model (or path to pretrained *.pt/*.pth model) 
 # Or one of ["resnet50v2", "inception_resnet_v2", "vgg19", "xception", "densenet121", "densenet201"]
-backbone_model = "resnet50v2" 
+backbone_model = "resnet50" 
 
 batch_size = 32
 

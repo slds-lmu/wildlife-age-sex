@@ -1,4 +1,5 @@
-from tensorflow.keras.models import Sequential
+from torch.nn import Module
+import torch
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
@@ -9,6 +10,7 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 import logging
+from torch.utils.data import DataLoader, TensorDataset
 # Age: 4 (yearling, juvenile, adult, unknown)
 # Sex: 3 (male, female, unknown)
 
@@ -26,7 +28,7 @@ import logging
 
 
 def evaluate_model(
-    model: Sequential,
+    model: Module,
     test_data: pd.DataFrame,
     target_column: str,
     classes: list[str],
@@ -65,13 +67,24 @@ def evaluate_model(
     results = {}
 
     # Calculate overall metrics
-    # Get raw numeric indices
+
+    # Convert images to tensor
+    inputs = torch.stack([torch.from_numpy(img).float() for img in test_data["image"].values])
+    inputs = inputs.permute(0, 3, 1, 2)  # Convert from (N, H, W, C) to (N, C, H, W)
+
     category_to_idx = {cat: idx for idx, cat in enumerate(classes)}
     labels = test_data[target_column].map(category_to_idx).values
-    print(np.isnan(labels).sum())
+    labels_tensor = torch.tensor(labels, dtype=torch.float)
+    test_dataset = TensorDataset(inputs, labels_tensor)
+    test_loader = DataLoader(
+        test_dataset, batch_size=64, shuffle=False
+    )  # adjust batch_size as needed
 
     logging.info("Generating predictions...")
-    predictions = _get_predictions(model, test_data["image"].values)
+    predictions = _get_predictions(model, test_loader)
+    # Use a boolean mask as a Series aligned to test_data's index to select error rows
+    error_mask = [l != p for l, p in zip(labels, predictions)]
+    errors = test_data[error_mask]
 
     logging.info("Calculating overall metrics...")
     results["overall"] = _get_metrics(labels, predictions, category_to_idx)
@@ -88,13 +101,21 @@ def evaluate_model(
             results[stratum_key] = _get_metrics(subset_labels, subset_predictions, category_to_idx)
             logging.info(f"{val} accuracy: {results[stratum_key]['accuracy']:.3f}")
 
-    return results
+    return results, errors
 
 
-def _get_predictions(model: Sequential, input_data: np.ndarray) -> np.ndarray:
-    """Helper function to get model predictions for a dataset."""
-    predictions = model.predict(np.stack(input_data).astype(np.float32))
-    return np.argmax(predictions, axis=1)  # Convert probabilities to class labels
+def _get_predictions(model: Module, data_loader: DataLoader) -> np.ndarray:
+    """Helper function to get model predictions for a dataset using a DataLoader."""
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.eval()
+    preds = []
+    with torch.no_grad():
+        for batch in data_loader:
+            inputs = batch[0].to(device)
+            outputs = model(inputs)
+            probs = torch.softmax(outputs, dim=1)
+            preds.append(probs.argmax(dim=1).cpu())
+    return torch.cat(preds).numpy()
 
 
 def _get_metrics(labels: np.ndarray, predictions: np.ndarray, category_to_idx: dict) -> dict:

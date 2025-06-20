@@ -33,7 +33,6 @@ classes = ["male", "female", "unknown"]
     [io.logging] #OPTIONAL
 
     # directory to use for log files. To stream logs to console, comment out or delete this param.
-    log_dir = "logs"
     # One of ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     log_level = "INFO" 
 
@@ -55,8 +54,6 @@ stratify_by = "sex"
 backbone_model = "/home/chemeryc/wildlife-age-sex/models/lwf_pretrained_model/model.h5" 
 
 batch_size = 32
-finetune_layers = 3
-finetune_epochs = 30
 
 [evaluate] #OPTIONAL
 
