@@ -1,0 +1,15 @@
+Model_4 - training with underrepresented species
+threshold 0.2
+training based on Model 241128, which was actively trained with pictures from entire unlabeled dataset 
+C:\LWF\wildlife-experiments\scripts>python experiments.py -a True -n False -d ../data_Veldenstein_Model_4 -p ../training_outputs/active/2024-11-28_16-42-30/model.h5 -t 0.2 -l 128
+
+best performing model so far
+
+
+is the following warning important?
+  _warn_prf(average, "true nor predicted", "F-score is", len(true_sum))
+C:\ProgramData\Miniconda3\envs\wildlife_tf\lib\site-packages\sklearn\metrics\_classification.py:1469: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))
+C:\ProgramData\Miniconda3\envs\wildlife_tf\lib\site-packages\sklearn\metrics\_classification.py:1469: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))
+C:\ProgramData\Miniconda3\envs\wildlife_tf\lib\site-packages\sklearn\metrics\_classification.py:1757: UndefinedMetricWarning: F-score is ill-defined and being set to 0.0 in labels with no true nor predicted samples. Use `zero_division` parameter to control this behavior.
