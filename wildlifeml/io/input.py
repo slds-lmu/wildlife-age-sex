@@ -22,7 +22,7 @@ TORCH_AVAILABLE_MODELS = {
 
 def load(filepath: str | Path, image_mode: Literal["RGB", "L"] = "RGB"):
     """
-    Load data from a parquet file or model from a PyTorch file.
+    Load data from a parquet file.
 
     Args:
     -----
@@ -34,8 +34,8 @@ def load(filepath: str | Path, image_mode: Literal["RGB", "L"] = "RGB"):
 
     Returns:
     --------
-    pd.DataFrame or torch.nn.Module
-        The loaded data or model.
+    pd.DataFrame
+        The loaded data.
     """
     if isinstance(filepath, str):
         filepath = Path(filepath)
@@ -73,6 +73,14 @@ def try_load_image(image_path: str | Path, mode: Literal["RGB", "L"]) -> np.ndar
 
 
 class WildlifeModel(nn.Module):
+    """
+    A model class that creates standardized models for image classification.
+
+    By default, the model is frozen and the classifier is trainable.
+    The base is all layers except the classifier.
+    The classifier is always nn.Linear with num_classes outputs.
+    """
+
     def __init__(self, model: nn.Module, num_classes: int | None = None):
         super().__init__()
         if num_classes is not None:
