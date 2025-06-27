@@ -38,11 +38,11 @@ def main(image_dir: str):
         for idx, (bbox, confidence, category) in enumerate(
             zip(bboxes, confidences, categories, strict=True)
         ):
-            processed_results[f"{idx}__{result['img_id'].split('/')[-1]}"] = {
+            processed_results[f"{idx}__{result['img_id'].split('/')[-1].replace('.JPG', '')}"] = {
                 # Unique bbox id, used as image_id after cropping
-                "bbox_id": f"{idx}__{result['img_id'].split('/')[-1].split('.')[0]}",
+                "bbox_id": f"{idx}__{result['img_id'].split('/')[-1].replace('.JPG', '')}",
                 # Unique file name, x.Station + "_" + x.Session + "_" + x.Trigger + x.Trigger_Sub
-                "image_id": result["img_id"].split("/")[-1].split(".")[0],
+                "image_id": result["img_id"].split("/")[-1].replace(".JPG", ""),
                 "image_path": result["img_id"],
                 "category": int(category),  # 0: animal
                 "bbox": [round(float(i), 4) for i in bbox],

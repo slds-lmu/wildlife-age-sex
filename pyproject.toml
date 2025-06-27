@@ -5,11 +5,9 @@ description = "Machine learning project to extract sex (male/female) and age (yo
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "albumentations>=2.0.5",
     "fastparquet>=2024.11.0",
-    "fire>=0.7.0",
     "ipykernel>=6.29.5",
-    "numpy<2.0.0",
+    "numpy>=1.23.2",
     "opencv-python>=4.11.0.86",
     "pandas>=2.2.3",
     "pillow>=11.2.1",
@@ -18,11 +16,9 @@ dependencies = [
     "pyarrow>=20.0.0",
     "ruff>=0.11.6",
     "scikit-learn>=1.6.1",
-    "scipy>=1.15.2",
     "tomli>=2.2.1",
     "torch>=2.6.0",
     "torchvision>=0.21.0",
-    "tqdm>=4.67.1",
 ]
 
 [build-system]
@@ -47,6 +43,15 @@ line-ending = "auto"
 cmd = "mkdir -p $WORKING_DIR/configs $WORKING_DIR/logs $WORKING_DIR/data $WORKING_DIR/models"
 args = [
     {name="WORKING_DIR", options=["-wd", "--working-dir"], default=".", help="Path to wd containing data and results directories. Uses cwd if no arg passed."},
+]
+
+[tool.poe.tasks.run-megadetector]
+shell = """
+    uv sync --only-group megadetector
+    uv run megadetector.py --image-dir $IMAGE_DIR
+"""
+args = [
+    {name="IMAGE_DIR", options=["--image-dir", "-i"], help="Path to image directory on which to run MegaDetector"}
 ]
 
 # Run pipeline from top-level wildlife-age-sex directory
@@ -75,11 +80,12 @@ frontend = [
     "pyarrow>=14.0.1",
     "pillow>=10.0.0",
     "plotly>=5.18.0",
-    "numpy>=1.24.0",
     "matplotlib",
 ]
 
-
-
+megadetector = [
+    "pytorchwildlife>=1.2.3",
+    "torch>=2.6.0",
+]
 
 
