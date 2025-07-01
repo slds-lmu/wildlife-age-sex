@@ -9,22 +9,6 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from ..utils import convert_to_numeric_indices, get_model_summary
 
 
-def _handle_model_outputs(outputs, criterion, labels):
-    """Handle model outputs, including auxiliary outputs from Inception models."""
-    if isinstance(outputs, tuple):
-        # Inception model returns (main_output, aux_output) during training
-        main_output, aux_output = outputs
-        main_loss = criterion(main_output, labels)
-        aux_loss = criterion(aux_output, labels)
-        # Weighted loss: main loss + 0.4 * auxiliary loss (standard for Inception)
-        total_loss = main_loss + 0.4 * aux_loss
-        return total_loss, main_output
-    else:
-        # Standard single output
-        loss = criterion(outputs, labels)
-        return loss, outputs
-
-
 def tune_model(
     model: nn.Module,
     train_data,
