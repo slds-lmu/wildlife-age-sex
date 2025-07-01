@@ -13,7 +13,6 @@ import torchvision.models as models
 # Dictionary of available PyTorch models
 TORCH_AVAILABLE_MODELS = {
     "resnet50": models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2),
-    "inception_v3": models.inception_v3(weights=models.Inception_V3_Weights.IMAGENET1K_V1),
     "vgg19": models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1),
     "densenet161": models.densenet161(weights=models.DenseNet161_Weights.IMAGENET1K_V1),
     "densenet201": models.densenet201(weights=models.DenseNet201_Weights.IMAGENET1K_V1),
@@ -102,8 +101,65 @@ class WildlifeModel(nn.Module):
         torch.save(self.model.state_dict(), filepath)
 
 
+def _make_base_for_classifier_model(model):
+    # Handles VGG and DenseNet architectures
+    name = model.__class__.__name__.lower()
+    if "vgg" in name:
+        # VGG: features -> avgpool -> flatten
+        return nn.Sequential(model.features, model.avgpool, nn.Flatten())
+    if "densenet" in name:
+        # DenseNet: features -> relu -> avgpool -> flatten
+        return nn.Sequential(
+            model.features, nn.ReLU(inplace=True), nn.AdaptiveAvgPool2d((1, 1)), nn.Flatten()
+        )
+    if "resnet" in name:
+        # ResNet: all layers except fc -> avgpool -> flatten
+        return nn.Sequential(*[m for n, m in model.named_children() if n != "fc"], nn.Flatten())
+    # Fallback: all layers except classifier
+    return nn.Sequential(*[m for n, m in model.named_children() if n != "classifier"])
+
+
+def _get_classifier_input_features(model: nn.Module) -> int:
+    """Extract input features from model's classifier or fc layer."""
+    if hasattr(model, "fc"):
+        return model.fc.in_features
+
+    if hasattr(model, "classifier"):
+        clf = model.classifier
+        if isinstance(clf, nn.Sequential):
+            modules = list(clf)
+            if modules and isinstance(modules[-1], nn.Linear):
+                return modules[-1].in_features
+        elif isinstance(clf, nn.Linear):
+            return clf.in_features
+
+    raise ValueError("Could not determine input features for classifier")
+
+
+def _create_new_classifier(model: nn.Module, num_classes: int) -> nn.Module:
+    """Create a new classifier with the specified number of classes."""
+    in_ftrs = _get_classifier_input_features(model)
+
+    if hasattr(model, "fc"):
+        return nn.Linear(in_ftrs, num_classes)
+
+    if hasattr(model, "classifier"):
+        clf = model.classifier
+        if isinstance(clf, nn.Sequential):
+            modules = list(clf)
+            if modules and isinstance(modules[-1], nn.Linear):
+                modules[-1] = nn.Linear(in_ftrs, num_classes)
+                return nn.Sequential(*modules)
+        elif isinstance(clf, nn.Linear):
+            return nn.Linear(in_ftrs, num_classes)
+
+    # Fallback: create simple linear classifier
+    return nn.Linear(in_ftrs, num_classes)
+
+
 def reshape_classifier(model: nn.Module, num_classes: int) -> nn.Module:
     """
+    Refactor model to have separate base and classifier components.
 
     Args:
     -----
@@ -115,36 +171,13 @@ def reshape_classifier(model: nn.Module, num_classes: int) -> nn.Module:
     Returns:
     --------
     nn.Module
-        The refactored model
+        The refactored model with base and classifier attributes
     """
-    # If model has .fc (e.g., ResNet)
-    if hasattr(model, "fc"):
-        in_ftrs = model.fc.in_features
-        # Make all layers (including what was .fc) part of model.base
-        base_layers = [m for n, m in model.named_children() if n != "fc"]
-        base_layers.append(nn.Flatten(1))
-        model.base = nn.Sequential(*base_layers)
-        model.classifier = nn.Linear(in_ftrs, num_classes)
-        return model
+    # Create new classifier and set up base
+    model.base = _make_base_for_classifier_model(model)
+    model.classifier = _create_new_classifier(model, num_classes)
 
-    # If model has .classifier (e.g., VGG, DenseNet)
-    if hasattr(model, "classifier"):
-        clf = model.classifier
-        if isinstance(clf, nn.Sequential):
-            modules = list(clf)
-            if modules and isinstance(modules[-1], nn.Linear):
-                last = modules[-1]
-                in_ftrs = last.in_features
-                modules[-1] = nn.Linear(in_ftrs, num_classes)
-                model.classifier = nn.Sequential(*modules)
-        elif isinstance(clf, nn.Linear):
-            in_ftrs = clf.in_features
-            model.classifier = nn.Linear(in_ftrs, num_classes)
-        # Move all layers except .classifier to base
-        base_layers = [m for n, m in model.named_children() if n != "classifier"]
-        model.base = nn.Sequential(*base_layers)
-        return model
-    raise RuntimeError("Model has no recognized final classifier layer")
+    return model
 
 
 def load_model(
@@ -160,7 +193,7 @@ def load_model(
 
     Args:
     -----
-    model: str | Path
+    backbone_model: str | Path
         Either a model name from TORCH_AVAILABLE_MODELS or path to a model file
     num_classes: int
         Number of output classes for the model

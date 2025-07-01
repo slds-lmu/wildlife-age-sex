@@ -51,7 +51,7 @@ stratify_by = "sex"
 [train] #REQUIRED
 
 # Name of a pretrained PyTorch model (or path to pretrained *.pt/*.pth model) 
-# Or one of ["resnet50", "inception_v3", "vgg19", "densenet161", "densenet201"]
+# Or one of ["resnet50", "vgg19", "densenet161", "densenet201"]
 backbone_model = "resnet50" 
 
 batch_size = 32
