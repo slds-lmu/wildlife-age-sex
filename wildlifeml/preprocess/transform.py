@@ -137,14 +137,25 @@ def get_absolute_coords(
         The absolute coordinates of the bounding box. (x_min, x_max), (y_min, y_max)
     """
     # Convert proportional coordinates to absolute pixel values
+    # image_shape is (height, width) from OpenCV
     height, width = image_shape
-    logging.debug(f"Converting coordinates for image shape: {image_shape}")
-    # Return x range, y range
-    x_min, y_min, box_width, box_height = bbox_coords
-    x_coords = (int(x_min * width), int((x_min + box_width) * width))
-    y_coords = (int(y_min * height), int((y_min + box_height) * height))
+    logging.warning(f"Bbox coords: {bbox_coords}, image shape: {image_shape}")
+
+    # Check if coords are x_min, y_min, width, height OR x_min, y_min, x_max, y_max
+    try:
+        x_min, y_min, bbox_width, bbox_height = bbox_coords
+        assert x_min >= 0 and y_min >= 0 and x_min + bbox_width <= 1 and y_min + bbox_height <= 1
+        x_coords = (int(x_min * width), int((x_min + bbox_width) * width))
+        y_coords = (int(y_min * height), int((y_min + bbox_height) * height))
+        logging.warning("Detected coord format: x_min, y_min, width, height")
+    except AssertionError:
+        x_min, y_min, x_max, y_max = bbox_coords
+        x_coords = (int(x_min * width), int(x_max * width))
+        y_coords = (int(y_min * height), int(y_max * height))
+        logging.warning("Detected coord format: x_min, y_min, x_max, y_max")
+
     result = (min(x_coords), max(x_coords)), (min(y_coords), max(y_coords))
-    logging.debug(f"Converted coordinates - x: {result[0]}, y: {result[1]}")
+    logging.warning(f"Converted coordinates - x: {result[0]}, y: {result[1]}")
     return result
 
 
@@ -152,7 +163,7 @@ def _crop_and_pad_image(
     image: np.ndarray, x_coords: tuple[int, int], y_coords: tuple[int, int]
 ) -> np.ndarray:
     """
-    Crop image to square, pad with zeros if necessary.
+    Shift the bounding box as much as possible to keep it inside the image, then crop to square with padding.
 
     Args:
     -----
@@ -178,21 +189,31 @@ def _crop_and_pad_image(
     if crop_size <= 0:
         raise ValueError(f"Invalid crop size: {crop_size}. Check bounding box coordinates.")
 
+    # Calculate initial crop boundaries centered on bbox
+    crop_x_start, crop_x_end, crop_y_start, crop_y_end = _calculate_centered_crop(
+        x_coords, y_coords, width, height, crop_size
+    )
+
+    # Shift boundaries to keep them within image bounds
+    crop_x_start, crop_x_end, crop_y_start, crop_y_end = _shift_crop_boundaries(
+        crop_x_start, crop_x_end, crop_y_start, crop_y_end, width, height, crop_size
+    )
+
     # Create a zero-padded array of the desired size
-    if len(image.shape) == 3:  # RBG image
+    if len(image.shape) == 3:  # RGB image
         padded = np.zeros((crop_size, crop_size, image.shape[2]), dtype=image.dtype)
     else:  # Grayscale image
         padded = np.zeros((crop_size, crop_size), dtype=image.dtype)
 
     # Calculate valid crop region (within image bounds)
-    x_start = max(0, x_min)
-    x_end = min(width, x_max)
-    y_start = max(0, y_min)
-    y_end = min(height, y_max)
+    x_start = max(0, crop_x_start)
+    x_end = min(width, crop_x_end)
+    y_start = max(0, crop_y_start)
+    y_end = min(height, crop_y_end)
 
     # Calculate corresponding region in padded array
-    pad_x_start = max(0, -x_min)
-    pad_y_start = max(0, -y_min)
+    pad_x_start = max(0, crop_x_start - x_start)
+    pad_y_start = max(0, crop_y_start - y_start)
 
     # Copy valid portion of image to padded array
     padded[
@@ -207,7 +228,8 @@ def _crop_image(
     image: np.ndarray, x_coords: tuple[int, int], y_coords: tuple[int, int]
 ) -> np.ndarray:
     """
-    Try to crop image by shifting bounding box first, fall back to padding if needed.
+    Try to crop image by shifting bounding box as much as possible to keep the square crop inside the image.
+    Only pad if the crop cannot fit even after maximum shifting.
 
     Args:
     -----
@@ -233,39 +255,22 @@ def _crop_image(
     if crop_size <= 0:
         raise ValueError(f"Invalid crop size: {crop_size}. Check bounding box coordinates.")
 
-    # Calculate approx. center of bounding box
-    center_x = (x_min + x_max) // 2
-    center_y = (y_min + y_max) // 2
-    half_size = crop_size // 2
+    # Calculate initial crop boundaries centered on bbox
+    crop_x_start, crop_x_end, crop_y_start, crop_y_end = _calculate_centered_crop(
+        x_coords, y_coords, width, height, crop_size
+    )
 
-    # Calculate X shift
-    x_shift = 0
-    if center_x - half_size < 0:
-        # Shift right if crop would go off left edge
-        x_shift = abs(center_x - half_size)
-    elif center_x + half_size > width:
-        # Shift left if crop would go off right edge
-        x_shift = -(center_x + half_size - width)
+    # Shift boundaries to keep them within image bounds
+    crop_x_start, crop_x_end, crop_y_start, crop_y_end = _shift_crop_boundaries(
+        crop_x_start, crop_x_end, crop_y_start, crop_y_end, width, height, crop_size
+    )
 
-    # Calculate Y shift
-    y_shift = 0
-    if center_y - half_size < 0:
-        # Shift down if crop would go off top edge
-        y_shift = abs(center_y - half_size)
-    elif center_y + half_size > height:
-        # Shift up if crop would go off bottom edge
-        y_shift = -(center_y + half_size - height)
-
-    # Calculate crop boundaries
-    x_start = max(0, center_x - half_size + x_shift)
-    y_start = max(0, center_y - half_size + y_shift)
-
-    # Check if shifted crop would work
-    if x_start + crop_size <= width and y_start + crop_size <= height:
-        logging.debug("Shifted crop successful")
-        return image[y_start : y_start + crop_size, x_start : x_start + crop_size]
+    # After shifting, check if the crop window is fully inside the image
+    if crop_x_start >= 0 and crop_y_start >= 0 and crop_x_end <= width and crop_y_end <= height:
+        logging.warning("Maximally shifted crop successful")
+        return image[crop_y_start:crop_y_end, crop_x_start:crop_x_end]
     else:
-        logging.debug("Shifted crop failed, falling back to padding")
+        logging.warning("Maximal shift failed, falling back to padding")
         return _crop_and_pad_image(image, x_coords, y_coords)
 
 
@@ -275,3 +280,83 @@ def rescale_images(images: list[np.ndarray], rescale_to: tuple[int, int]) -> lis
     """
     logging.debug(f"Rescaling {len(images)} images to {rescale_to[0]}x{rescale_to[1]}")
     return [cv2.resize(image, rescale_to) if image is not None else None for image in images]
+
+
+def _shift_crop_boundaries(
+    crop_x_start: int,
+    crop_x_end: int,
+    crop_y_start: int,
+    crop_y_end: int,
+    width: int,
+    height: int,
+    crop_size: int,
+) -> tuple[int, int, int, int]:
+    """
+    Shift crop boundaries to keep them within image bounds.
+
+    Args:
+        crop_x_start, crop_x_end, crop_y_start, crop_y_end: Initial crop boundaries
+        width, height: Image dimensions
+        crop_size: Size of the square crop
+
+    Returns:
+        Adjusted crop boundaries (x_start, x_end, y_start, y_end)
+    """
+    # Handle x-axis violations
+    if crop_x_start < 0:
+        # Shift right by the violation amount
+        shift = abs(crop_x_start)
+        crop_x_start += shift
+        crop_x_end += shift
+    elif crop_x_end > width:
+        # Shift left by the violation amount
+        shift = crop_x_end - width
+        crop_x_start -= shift
+        crop_x_end -= shift
+
+    # Handle y-axis violations
+    if crop_y_start < 0:
+        # Shift down by the violation amount
+        shift = abs(crop_y_start)
+        crop_y_start += shift
+        crop_y_end += shift
+    elif crop_y_end > height:
+        # Shift up by the violation amount
+        shift = crop_y_end - height
+        crop_y_start -= shift
+        crop_y_end -= shift
+    logging.warning(
+        f"Shifted crop boundaries: x_start={crop_x_start}, x_end={crop_x_end}, y_start={crop_y_start}, y_end={crop_y_end}"
+    )
+    return crop_x_start, crop_x_end, crop_y_start, crop_y_end
+
+
+def _calculate_centered_crop(
+    x_coords: tuple[int, int], y_coords: tuple[int, int], width: int, height: int, crop_size: int
+) -> tuple[int, int, int, int]:
+    """
+    Calculate crop boundaries centered on the bounding box.
+
+    Args:
+        x_coords, y_coords: Bounding box coordinates
+        width, height: Image dimensions
+        crop_size: Size of the square crop
+
+    Returns:
+        Crop boundaries (x_start, x_end, y_start, y_end)
+    """
+    x_min, x_max = x_coords
+    y_min, y_max = y_coords
+
+    # Calculate center of bounding box
+    center_x = (x_min + x_max) // 2
+    center_y = (y_min + y_max) // 2
+    half_size = crop_size // 2
+
+    # Initial crop boundaries centered on bbox
+    crop_x_start = center_x - half_size
+    crop_y_start = center_y - half_size
+    crop_x_end = crop_x_start + crop_size
+    crop_y_end = crop_y_start + crop_size
+
+    return crop_x_start, crop_x_end, crop_y_start, crop_y_end

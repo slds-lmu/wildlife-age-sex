@@ -1,0 +1,71 @@
+{
+    "overall": {
+        "n_test_observations": 193,
+        "class_distribution": {
+            "female": 105,
+            "male": 68,
+            "unknown": 20
+        },
+        "precision": 0.7590858505601793,
+        "recall": 0.7512953367875648,
+        "f1-score": 0.7389765317660851,
+        "accuracy": 0.7512953367875648,
+        "confusion_matrix": {
+            "male_male": 49,
+            "male_female": 19,
+            "male_unknown": 0,
+            "female_male": 14,
+            "female_female": 90,
+            "female_unknown": 1,
+            "unknown_male": 2,
+            "unknown_female": 12,
+            "unknown_unknown": 6
+        }
+    },
+    "is_summer: False": {
+        "n_test_observations": 128,
+        "class_distribution": {
+            "female": 65,
+            "male": 53,
+            "unknown": 10
+        },
+        "precision": 0.7561677631578947,
+        "recall": 0.7421875,
+        "f1-score": 0.7359819046114338,
+        "accuracy": 0.7421875,
+        "confusion_matrix": {
+            "male_male": 36,
+            "male_female": 17,
+            "male_unknown": 0,
+            "female_male": 10,
+            "female_female": 55,
+            "female_unknown": 0,
+            "unknown_male": 2,
+            "unknown_female": 4,
+            "unknown_unknown": 4
+        }
+    },
+    "is_summer: True": {
+        "n_test_observations": 65,
+        "class_distribution": {
+            "female": 40,
+            "male": 15,
+            "unknown": 10
+        },
+        "precision": 0.7576671694318753,
+        "recall": 0.7692307692307693,
+        "f1-score": 0.741624608423251,
+        "accuracy": 0.7692307692307693,
+        "confusion_matrix": {
+            "male_male": 13,
+            "male_female": 2,
+            "male_unknown": 0,
+            "female_male": 4,
+            "female_female": 35,
+            "female_unknown": 1,
+            "unknown_male": 0,
+            "unknown_female": 8,
+            "unknown_unknown": 2
+        }
+    }
+}

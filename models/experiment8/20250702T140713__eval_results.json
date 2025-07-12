@@ -1,0 +1,71 @@
+{
+    "overall": {
+        "n_test_observations": 193,
+        "class_distribution": {
+            "female": 105,
+            "male": 68,
+            "unknown": 20
+        },
+        "precision": 0.7302822063477883,
+        "recall": 0.7409326424870466,
+        "f1-score": 0.7204160985210152,
+        "accuracy": 0.7409326424870466,
+        "confusion_matrix": {
+            "male_male": 44,
+            "male_female": 22,
+            "male_unknown": 2,
+            "female_male": 9,
+            "female_female": 95,
+            "female_unknown": 1,
+            "unknown_male": 5,
+            "unknown_female": 11,
+            "unknown_unknown": 4
+        }
+    },
+    "is_summer: False": {
+        "n_test_observations": 123,
+        "class_distribution": {
+            "female": 66,
+            "male": 47,
+            "unknown": 10
+        },
+        "precision": 0.7082399060388354,
+        "recall": 0.7317073170731707,
+        "f1-score": 0.7130802801534509,
+        "accuracy": 0.7317073170731707,
+        "confusion_matrix": {
+            "male_male": 31,
+            "male_female": 14,
+            "male_unknown": 2,
+            "female_male": 7,
+            "female_female": 58,
+            "female_unknown": 1,
+            "unknown_male": 3,
+            "unknown_female": 6,
+            "unknown_unknown": 1
+        }
+    },
+    "is_summer: True": {
+        "n_test_observations": 70,
+        "class_distribution": {
+            "female": 39,
+            "male": 21,
+            "unknown": 10
+        },
+        "precision": 0.7845546218487396,
+        "recall": 0.7571428571428571,
+        "f1-score": 0.7344395994307289,
+        "accuracy": 0.7571428571428571,
+        "confusion_matrix": {
+            "male_male": 13,
+            "male_female": 8,
+            "male_unknown": 0,
+            "female_male": 2,
+            "female_female": 37,
+            "female_unknown": 0,
+            "unknown_male": 2,
+            "unknown_female": 5,
+            "unknown_unknown": 3
+        }
+    }
+}
