@@ -190,5 +190,6 @@ data/*
 !data/test/
 *.parquet
 # keep error tables from evaluation
+models/**/**/*.jpg
 !models/**/*.parquet
 
