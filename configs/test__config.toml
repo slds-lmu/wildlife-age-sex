@@ -43,12 +43,11 @@ confidence_threshold = 0.96
 cropping_mode = "shift" 
 rescale_to = [224, 224]
 
-# Column from your raw data file on which to stratify sampling
+[train] #REQUIRED
+# Column from your preprocessed data file on which to stratify sampling
 # Currently only supports stratification by one column
 # To do a train-test split without stratification, delete or comment out this param.
 stratify_by = "sex"
-
-[train] #REQUIRED
 
 # Name of a pretrained PyTorch model (or path to pretrained *.pt/*.pth model) 
 # Or one of ["resnet50", "vgg19", "densenet161", "densenet201"]

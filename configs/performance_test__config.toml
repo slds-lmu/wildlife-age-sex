@@ -19,7 +19,9 @@ classes = ["male", "female", "unknown"]
 
     # Parquet file with image, label, and metadata columns
     raw_data_filepath = "data/preprocessed/27062025_clean_labeled_bbox_data.parquet"
-    # Location for results of `preprocess.py` to use in `train` and `evaluate` steps.
+    # Location for results of `preprocess.py`, can already exist when using `poe run-experiment` command
+    preprocessed_data_filepath = "data/preprocessed/13072025_cropped_data.parquet"
+    # Location for results of split for `train` and `evaluate` steps.
     train_filepath = "data/performance_test/train.parquet"
     test_filepath = "data/performance_test/test.parquet"
 
@@ -42,12 +44,11 @@ confidence_threshold = 0.96
 cropping_mode = "shift" 
 rescale_to = [224, 224]
 
-# Column from your raw data file on which to stratify sampling
+[train] #REQUIRED
+# Column from your preprocessed data file on which to stratify sampling
 # Currently only supports stratification by one column
 # To do a train-test split without stratification, delete or comment out this param.
 stratify_by = "sex"
-
-[train] #REQUIRED
 
 # Name of a pretrained PyTorch model (or path to pretrained *.pt/*.pth model) 
 # Or one of ["resnet50", "vgg19", "densenet161", "densenet201"]

@@ -11,14 +11,13 @@ from pathlib import Path
 import tomli
 
 from wildlifeml.io import load, save
-from wildlifeml.preprocess import preprocess_data, split_data
+from wildlifeml.preprocess import preprocess_data
 
 
 def main(
     working_dir: str,
     raw_data_filepath: str,
-    train_filepath: str,
-    test_filepath: str,
+    preprocessed_data_filepath: str,
     preprocess_kwargs: dict,
     **kwargs,
 ):
@@ -30,14 +29,10 @@ def main(
     # Preprocess data
     logging.info(f"Preprocessing data...")
     preprocessed_data = preprocess_data(data, **preprocess_kwargs)
-
-    # Split data, save to disk
-    logging.info(f"Splitting data...")
-    for train, test in split_data(
-        preprocessed_data, stratify_by=preprocess_kwargs.get("stratify_by", None)
-    ):
-        save(train, filepath=Path(working_dir) / Path(train_filepath))
-        save(test, filepath=Path(working_dir) / Path(test_filepath))
+    save(
+        preprocessed_data,
+        filepath=Path(working_dir) / Path(preprocessed_data_filepath),
+    )
 
 
 if __name__ == "__main__":

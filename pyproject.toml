@@ -71,6 +71,22 @@ args = [
     {name="CONFIG_PATH", options=["-c", "--config"], default="configs/test__config.toml", help="Path to config file relative to wd."}
 ]
 
+[tool.poe.tasks.run-experiment]
+# updating opencv-python resolves versioning issue
+shell = """
+    echo "Starting pipeline execution with config: $CONFIG_PATH" && \
+    uv sync --group pipeline && \
+    uv pip install -U opencv-python 
+    echo "Dependencies synced. Using preprocessed data. Starting training..." && \
+    uv run scripts/train.py --config $CONFIG_PATH && \
+    echo "Training completed. Starting evaluation..." && \
+    uv run scripts/evaluate.py --config $CONFIG_PATH && \
+    echo "Pipeline execution completed successfully!"
+"""
+args = [
+    {name="CONFIG_PATH", options=["-c", "--config"], default="configs/test__config.toml", help="Path to config file relative to wd."}
+]
+
 [tool.poe.tasks.build-frontend]
 shell = """
     uv sync --group frontend

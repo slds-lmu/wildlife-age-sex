@@ -10,12 +10,14 @@ os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # Disable oneDNN warnings
 import tomli
 
 from wildlifeml.io import load_model, load, save
-from wildlifeml.train import tune_model
+from wildlifeml.train import tune_model, split_data
 
 
 def main(
     working_dir: str,
+    preprocessed_data_filepath: str,
     train_filepath: str,
+    test_filepath: str,
     model_dir: str,
     target_column: str,
     classes: list[str],
@@ -23,7 +25,15 @@ def main(
     **kwargs,
 ):
     # Load data
-    train_data = load(filepath=Path(working_dir) / Path(train_filepath))
+    preprocessed_data = load(filepath=Path(working_dir) / Path(preprocessed_data_filepath))
+
+    # Split data, save to disk
+    logging.info(f"Splitting data...")
+    for train_data, test_data in split_data(
+        preprocessed_data, stratify_by=training_args.get("stratify_by", None)
+    ):
+        save(train_data, filepath=Path(working_dir) / Path(train_filepath))
+        save(test_data, filepath=Path(working_dir) / Path(test_filepath))
 
     # Train model
     model = load_model(**training_args, num_classes=len(classes))

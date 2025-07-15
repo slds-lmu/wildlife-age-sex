@@ -1,0 +1,70 @@
+{
+    "overall": {
+        "n_test_observations": 3,
+        "class_distribution": {
+            "unknown": 1,
+            "female": 1,
+            "male": 1
+        },
+        "precision": 0.1111111111111111,
+        "recall": 0.3333333333333333,
+        "f1-score": 0.16666666666666666,
+        "accuracy": 0.3333333333333333,
+        "confusion_matrix": {
+            "male_male": 1,
+            "male_female": 0,
+            "male_unknown": 0,
+            "female_male": 1,
+            "female_female": 0,
+            "female_unknown": 0,
+            "unknown_male": 1,
+            "unknown_female": 0,
+            "unknown_unknown": 0
+        }
+    },
+    "dummy_metadata: 2": {
+        "n_test_observations": 1,
+        "class_distribution": {
+            "unknown": 1
+        },
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "accuracy": 0.0,
+        "confusion_matrix": {
+            "male_male": 0,
+            "male_female": 0,
+            "female_male": 1,
+            "female_female": 0
+        }
+    },
+    "dummy_metadata: 4": {
+        "n_test_observations": 1,
+        "class_distribution": {
+            "female": 1
+        },
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "accuracy": 0.0,
+        "confusion_matrix": {
+            "male_male": 0,
+            "male_female": 0,
+            "female_male": 1,
+            "female_female": 0
+        }
+    },
+    "dummy_metadata: 3": {
+        "n_test_observations": 1,
+        "class_distribution": {
+            "male": 1
+        },
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "accuracy": 1.0,
+        "confusion_matrix": {
+            "male_male": 1
+        }
+    }
+}

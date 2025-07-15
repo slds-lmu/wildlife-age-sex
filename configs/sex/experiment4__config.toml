@@ -1,0 +1,66 @@
+# This TOML file specifies the config for running the learning pipeline with test data.
+# It contains all the necessary params and can be used as a template for your local IO config.
+# Be careful to retain all original variable names and heading structure as outlined here.
+
+# To learn more about TOML syntax, see https://toml.io/en/.
+
+[globals]
+# Absolute path or relative path from the wd in which you execute the pipeline
+# All other paths are relative to this working directory
+working_dir = "." 
+
+#NOTE: input column is "image" by default. 
+target_column = "sex"
+classes = ["male", "female", "unknown"]
+
+[io]
+    ## Data paths (read and write) 
+    [io.data] #REQUIRED
+
+    # Parquet file with image, label, and metadata columns
+    raw_data_filepath = "data/preprocessed/12072025_clean_labeled_bbox_data.parquet"
+    # Location for results of `preprocess.py`, can already exist when using `poe run-experiment` command
+    preprocessed_data_filepath = "data/preprocessed/13072025_cropped_data.parquet"
+    # Location for results of split for `train` and `evaluate` steps.
+    train_filepath = "data/sex/experiment4/train.parquet"
+    test_filepath = "data/sex/experiment4/test.parquet"
+
+    ## Model and results paths (read and write)
+    [io.model] #REQUIRED
+
+    # Directory to use for trained model (both training specs and model file)
+    model_dir = "models/sex/experiment4"
+
+    # Logging configuration (write)
+    [io.logging] #OPTIONAL
+
+    # directory to use for log files. To stream logs to console, comment out or delete this param.
+    # One of ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    log_level = "INFO"
+
+[preprocess] #OPTIONAL
+
+confidence_threshold = 0.96
+cropping_mode = "shift" 
+rescale_to = [224, 224]
+
+[train] #REQUIRED
+# Column from your preprocessed data file on which to stratify sampling
+# Currently only supports stratification by one column
+# To do a train-test split without stratification, delete or comment out this param.
+stratify_by = "sex"
+
+# Name of a pretrained PyTorch model (or path to pretrained *.pt/*.pth model) 
+# Or one of ["resnet50", "vgg19", "densenet161", "densenet201"]
+backbone_model = "densenet201"
+
+batch_size = 32
+
+finetune_layers = 5
+finetune_optimizer = "sgd"
+finetune_epochs = 30
+
+[evaluate] #OPTIONAL
+
+# Provide stratified evaluation on specified colunm, only supports stratification on one column
+stratify_by = "is_summer"
