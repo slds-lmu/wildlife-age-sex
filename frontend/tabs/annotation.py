@@ -189,11 +189,23 @@ def render_bbox_image(bbox: dict):
         image = Image.open(bbox["image_path"]).convert("RGB")
         draw = ImageDraw.Draw(image)
         if bbox["bbox"]:
-            w, h = image.size
-            # Unpack coordinates assuming format is [x_min, y_min, width, height]
-            x_min, y_min, width, height = bbox["bbox"]
-            # Convert coordinates to pixel values
-            box = [x_min * w, y_min * h, (x_min + width) * w, (y_min + height) * h]
+            width, height = image.size
+            try:
+                x_min, y_min, bbox_width, bbox_height = bbox["bbox"]
+                assert (
+                    x_min >= 0
+                    and y_min >= 0
+                    and x_min + bbox_width <= 1
+                    and y_min + bbox_height <= 1
+                )
+                x_coords = (int(x_min * width), int((x_min + bbox_width) * width))
+                y_coords = (int(y_min * height), int((y_min + bbox_height) * height))
+            except AssertionError:
+                x_min, y_min, x_max, y_max = bbox["bbox"]
+                x_coords = (int(x_min * width), int(x_max * width))
+                y_coords = (int(y_min * height), int(y_max * height))
+            # use coordinates to draw rectangle
+            box = [x_coords[0], y_coords[0], x_coords[1], y_coords[1]]
             draw.rectangle(box, outline="red", width=3)
         st.image(image, caption=bbox["image_path"], use_container_width=True)
     else:
