@@ -73,6 +73,8 @@ def evaluate_model(
     inputs = inputs.permute(0, 3, 1, 2)  # Convert from (N, H, W, C) to (N, C, H, W)
 
     category_to_idx = {cat: idx for idx, cat in enumerate(classes)}
+    idx_to_category = {idx: cat for cat, idx in category_to_idx.items()}
+
     labels = test_data[target_column].map(category_to_idx).values
     labels_tensor = torch.tensor(labels, dtype=torch.float)
     test_dataset = TensorDataset(inputs, labels_tensor)
@@ -84,10 +86,11 @@ def evaluate_model(
     predictions = _get_predictions(model, test_loader)
     # Use a boolean mask as a Series aligned to test_data's index to select error rows
     error_mask = [l != p for l, p in zip(labels, predictions)]
-    errors = test_data[error_mask]
+    errors = test_data[error_mask].copy()
+    errors["predicted_label"] = [idx_to_category[p] for p in predictions[error_mask]]
 
     logging.info("Calculating overall metrics...")
-    results["overall"] = _get_metrics(labels, predictions, category_to_idx)
+    results["overall"] = _get_metrics(labels, predictions, idx_to_category, target_column)
     logging.info(f"Overall accuracy: {results['overall']['accuracy']:.3f}")
 
     # Calculate stratified metrics if requested
@@ -98,7 +101,9 @@ def evaluate_model(
             subset_predictions = predictions[test_data[stratify_by] == val]
             logging.debug(f"Stratum {val}: {len(subset_labels)} samples")
             stratum_key = f"{stratify_by}: {val}"
-            results[stratum_key] = _get_metrics(subset_labels, subset_predictions, category_to_idx)
+            results[stratum_key] = _get_metrics(
+                subset_labels, subset_predictions, idx_to_category, target_column
+            )
             logging.info(f"{val} accuracy: {results[stratum_key]['accuracy']:.3f}")
 
     return results, errors
@@ -118,14 +123,13 @@ def _get_predictions(model: Module, data_loader: DataLoader) -> np.ndarray:
     return torch.cat(preds).numpy()
 
 
-def _get_metrics(labels: np.ndarray, predictions: np.ndarray, category_to_idx: dict) -> dict:
+def _get_metrics(
+    labels: np.ndarray, predictions: np.ndarray, idx_to_category: dict, target_column: str
+) -> dict:
     """Helper function to calculate all evaluation metrics."""
     # Convert confusion matrix to dict with original labels as keys
     cm = confusion_matrix(labels, predictions)
     logging.debug(f"Confusion matrix shape: {cm.shape}")
-
-    # Create reverse mapping from indices to original labels
-    idx_to_category = {idx: cat for cat, idx in category_to_idx.items()}
 
     # Convert confusion matrix to dict with original labels
     cm_dict = {
@@ -139,6 +143,7 @@ def _get_metrics(labels: np.ndarray, predictions: np.ndarray, category_to_idx: d
     class_distribution = pd.Series(labels).map(idx_to_category).value_counts().to_dict()
 
     metrics = {
+        "target_column": target_column,
         "n_test_observations": len(labels),
         "class_distribution": class_distribution,
         "precision": precision_score(labels, predictions, average="weighted", zero_division=0),

@@ -1,0 +1,74 @@
+{
+    "overall": {
+        "target_column": "sex",
+        "n_test_observations": 150,
+        "class_distribution": {
+            "female": 83,
+            "male": 53,
+            "unknown": 14
+        },
+        "precision": 0.7666849816849816,
+        "recall": 0.7666666666666667,
+        "f1-score": 0.7666351107309191,
+        "accuracy": 0.7666666666666667,
+        "confusion_matrix": {
+            "male_male": 41,
+            "male_female": 12,
+            "male_unknown": 0,
+            "female_male": 11,
+            "female_female": 66,
+            "female_unknown": 6,
+            "unknown_male": 0,
+            "unknown_female": 6,
+            "unknown_unknown": 8
+        }
+    },
+    "is_summer: True": {
+        "target_column": "sex",
+        "n_test_observations": 63,
+        "class_distribution": {
+            "female": 30,
+            "male": 26,
+            "unknown": 7
+        },
+        "precision": 0.8258235193719065,
+        "recall": 0.8253968253968254,
+        "f1-score": 0.8249964971276447,
+        "accuracy": 0.8253968253968254,
+        "confusion_matrix": {
+            "male_male": 22,
+            "male_female": 4,
+            "male_unknown": 0,
+            "female_male": 4,
+            "female_female": 25,
+            "female_unknown": 1,
+            "unknown_male": 0,
+            "unknown_female": 2,
+            "unknown_unknown": 5
+        }
+    },
+    "is_summer: False": {
+        "target_column": "sex",
+        "n_test_observations": 87,
+        "class_distribution": {
+            "female": 53,
+            "male": 27,
+            "unknown": 7
+        },
+        "precision": 0.7282272325375773,
+        "recall": 0.7241379310344828,
+        "f1-score": 0.7259596616785946,
+        "accuracy": 0.7241379310344828,
+        "confusion_matrix": {
+            "male_male": 19,
+            "male_female": 8,
+            "male_unknown": 0,
+            "female_male": 7,
+            "female_female": 41,
+            "female_unknown": 5,
+            "unknown_male": 0,
+            "unknown_female": 4,
+            "unknown_unknown": 3
+        }
+    }
+}

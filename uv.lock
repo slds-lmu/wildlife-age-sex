@@ -3655,11 +3655,14 @@ dependencies = [
 [package.dev-dependencies]
 frontend = [
     { name = "matplotlib" },
+    { name = "opencv-python" },
     { name = "pandas" },
     { name = "pillow" },
     { name = "plotly" },
     { name = "pyarrow" },
     { name = "streamlit" },
+    { name = "torch" },
+    { name = "torchvision" },
 ]
 megadetector = [
     { name = "pytorchwildlife" },
@@ -3689,11 +3692,14 @@ requires-dist = [
 [package.metadata.requires-dev]
 frontend = [
     { name = "matplotlib" },
+    { name = "opencv-python", specifier = ">=4.11.0.86" },
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "pillow", specifier = ">=10.0.0" },
     { name = "plotly", specifier = ">=5.18.0" },
     { name = "pyarrow", specifier = ">=14.0.1" },
     { name = "streamlit", specifier = "==1.46.0" },
+    { name = "torch", specifier = ">=2.6.0" },
+    { name = "torchvision", specifier = ">=0.21.0" },
 ]
 megadetector = [
     { name = "pytorchwildlife", specifier = ">=1.2.3" },

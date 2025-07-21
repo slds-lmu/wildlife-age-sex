@@ -1,0 +1,324 @@
+import streamlit as st
+import os
+from pathlib import Path
+import logging
+import json
+import plotly.express as px
+import glob
+import pandas as pd
+from wildlifeml.io import load
+
+
+def render_error_viewing_page():
+    st.title("Error Viewing")
+    st.write("Here you can view the mislabeled images from each experiment.")
+
+    st.write("## Select Experiment")
+    experiment_name = st.selectbox("Select experiment", get_experiments())
+    if st.button("Continue", key="select_experiment"):
+        st.session_state.experiment_name = experiment_name
+
+    if "experiment_name" in st.session_state:
+        st.write(f"Experiment: {st.session_state.experiment_name}")
+        render_results_summary(st.session_state.experiment_name)
+        render_errors(st.session_state.experiment_name)
+        with st.expander("Training Specs"):
+            render_training_specs(st.session_state.experiment_name)
+
+
+def get_experiments():
+    """
+    Scan the models/ directory for experiments containing .pt files.
+    Returns list of relative paths from models/ for identifiability.
+    """
+    models_dir = Path("models")
+    experiments = []
+
+    # Check if models directory exists
+    if not models_dir.exists():
+        st.error("Models directory not found!")
+        return []
+
+    # Walk through all subdirectories in models/
+    for root, dirs, files in os.walk(models_dir):
+        # Check if any .pt files exist in current directory
+        if any(file.endswith(".pt") for file in files):
+            # Get relative path from models/ directory
+            relative_path = Path(root).relative_to(models_dir)
+            experiments.append(str(relative_path))
+
+    # Sort experiments for consistent ordering
+    experiments.sort()
+    return experiments
+
+
+def render_results_summary(experiment_name):
+    """Render summary cards for all evaluation results in the experiment directory."""
+
+    # Get the experiment directory path
+    experiment_dir = Path("models") / experiment_name
+
+    # Find all evaluation result files
+    eval_files = glob.glob(str(experiment_dir / "*__eval_results.json"))
+
+    if not eval_files:
+        st.info("No evaluation results found for this experiment.")
+        return
+
+    st.subheader("Evaluation Results Summary")
+
+    # Sort files by timestamp (newest first)
+    eval_files.sort(reverse=True)
+
+    # Create columns for the summary cards
+    cols = st.columns(min(3, len(eval_files)))
+
+    for i, eval_file in enumerate(eval_files):
+        col_idx = i % 3
+        with cols[col_idx]:
+            try:
+                # Load evaluation results
+                with open(eval_file, "r") as f:
+                    results = json.load(f)
+
+                # Extract timestamp from filename
+                filename = Path(eval_file).name
+                # Extract and format timestamp as YYMMDDTHHMMSS
+                from datetime import datetime
+
+                raw_timestamp = filename.split("__")[0]
+                try:
+                    dt = datetime.strptime(raw_timestamp, "%Y%m%dT%H%M%S")
+                    timestamp = dt.strftime("%B %d, %Y at %I:%M:%S")
+                except Exception:
+                    timestamp = raw_timestamp  # fallback if format is unexpected
+
+                # Get overall metrics
+                overall = results.get("overall", {})
+
+                # Create summary card
+                with st.container():
+                    st.write(f"**Timestamp:** {timestamp}")
+                    st.write(
+                        "Accuracy",
+                        f"{overall.get('accuracy', 'N/A'):.3f}"
+                        if overall.get("accuracy") is not None
+                        else "N/A",
+                    )
+                    st.write(
+                        "F1-Score",
+                        f"{overall.get('f1-score', 'N/A'):.3f}"
+                        if overall.get("f1-score") is not None
+                        else "N/A",
+                    )
+                    st.write(
+                        "Precision",
+                        f"{overall.get('precision', 'N/A'):.3f}"
+                        if overall.get("precision") is not None
+                        else "N/A",
+                    )
+                    st.write(
+                        "Recall",
+                        f"{overall.get('recall', 'N/A'):.3f}"
+                        if overall.get("recall") is not None
+                        else "N/A",
+                    )
+                    st.write(f"**Test Samples:** {overall.get('n_test_observations', 'N/A')}")
+            except Exception as e:
+                st.error(f"Error loading evaluation results: {e}")
+                logging.error(f"Error loading evaluation results: {e}")
+
+
+def render_errors(experiment_name):
+    """Render error images in a simple infinite slideshow."""
+
+    # Get the experiment directory path
+    experiment_dir = Path("models") / experiment_name
+
+    # Find all error files
+    error_files = glob.glob(str(experiment_dir / "*__eval_errors.parquet"))
+
+    if not error_files:
+        st.info("No error files found for this experiment.")
+        return
+
+    st.subheader("Model Errors - Slideshow")
+
+    try:
+        # Load all error data and combine
+        all_error_data = []
+        for error_file in error_files:
+            data = load(error_file)
+            all_error_data.append(data)
+
+        if not all_error_data:
+            st.info("No errors found in any files.")
+            return
+
+        # Combine all data and deduplicate by image_path
+        combined_data = pd.concat(all_error_data, ignore_index=True)
+        combined_data = combined_data.drop_duplicates(subset=["image_path"], keep="first")
+
+        if len(combined_data) == 0:
+            st.info("No unique errors found after deduplication.")
+            return
+
+        st.write(f"**Total unique errors:** {len(combined_data)}")
+
+        target_column = get_target_column(experiment_dir)
+
+        # Initialize current index in session state
+        if "error_index" not in st.session_state:
+            st.session_state.error_index = 0
+
+        # Progress indicator
+        st.write(f"**Image {st.session_state.error_index + 1} of {len(combined_data)}**")
+        progress = (st.session_state.error_index + 1) / len(combined_data)
+        st.progress(progress)
+
+        # Display current image
+        current_row = combined_data.iloc[st.session_state.error_index]
+
+        if current_row.get("image") is not None:
+            # Display image
+            st.image(
+                current_row["image"], caption=f"Image ID: {current_row['image_id']}", width=600
+            )
+            render_slide_controls(combined_data)
+
+            # Display metadata in columns
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.write(f"**True {target_column.title()}:** {current_row.get(target_column)}")
+                st.write(
+                    f"**Predicted {target_column.title()}:** {current_row.get('predicted_label')}"
+                )
+                ## st.write(f"**Confidence:** {current_row.get('confidence')}")
+
+            with col2:
+                if "DateTime" in current_row:
+                    date_str = (
+                        current_row["DateTime"].strftime("%Y-%m-%d")
+                        if pd.notna(current_row["DateTime"])
+                        else "N/A"
+                    )
+                    st.write(f"**Date:** {date_str}")
+                if "is_summer" in current_row:
+                    season = "Summer" if current_row["is_summer"] else "Winter"
+                    st.write(f"**Season:** {season}")
+
+        else:
+            st.error(f"Image not found for index {st.session_state.error_index}")
+
+    except Exception as e:
+        st.error(f"Error loading error data: {e}")
+        logging.error(f"Error loading error data: {e}")
+
+
+def get_target_column(experiment_dir):
+    # Take first eval_results file, all should be the same target
+    eval_file = Path(glob.glob(str(experiment_dir / "*__eval_results.json"))[0])
+    if eval_file.exists():
+        with open(eval_file) as f:
+            eval_results = json.load(f)
+        target_column = eval_results["overall"].get("target_column")
+    else:
+        st.error("Could not find eval_results file to determine target column.")
+        return
+    return target_column
+
+
+def render_slide_controls(combined_data):
+    # Navigation controls
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
+
+    with col1:
+        if st.button("⏮️ First"):
+            st.session_state.error_index = 0
+            st.rerun()
+
+    with col2:
+        if st.button("⬅️ Previous"):
+            st.session_state.error_index = max(0, st.session_state.error_index - 1)
+            st.rerun()
+
+    with col3:
+        if st.button("Next ➡️"):
+            st.session_state.error_index = min(
+                len(combined_data) - 1, st.session_state.error_index + 1
+            )
+            st.rerun()
+
+    with col4:
+        if st.button("⏭️ Last"):
+            st.session_state.error_index = len(combined_data) - 1
+            st.rerun()
+
+
+def load_training_specs(model_name):
+    """Load training specifications for a specific model."""
+    model_dir = Path("models") / model_name
+    specs_file = model_dir / "tuning_specs.json"
+    with open(specs_file) as f:
+        return json.load(f)
+
+
+def render_training_specs(model):
+    """Render training specifications for a specific model."""
+    try:
+        specs = load_training_specs(model)
+
+        # Display training parameters
+        st.subheader("Training Parameters")
+        # Display class distribution
+        st.write("#### Class Distribution")
+        st.write(f"Training set contained {specs['n_train_observations']} observations.")
+        class_dist = specs["class_distribution"]
+        fig = px.treemap(
+            names=list(class_dist.keys()),
+            parents=["Training Data"] * len(class_dist),
+            values=list(class_dist.values()),
+            title="Training Data Class Distribution",
+        )
+        fig.update_layout(width=800, height=400)
+        st.plotly_chart(fig, key=f"{model.replace(' ', '_')}__training_class_distribution")
+        params = specs["training_params"]
+
+        # Transfer learning phase
+        st.write("#### Transfer Learning Phase")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Epochs", params["transfer_epochs"])
+            st.metric("Patience", params["transfer_patience"])
+        with col2:
+            st.metric("Optimizer", params["transfer_optimizer"]["name"])
+            st.metric("Learning Rate", f"{params['transfer_optimizer']['learning_rate']:.4f}")
+
+        # Fine-tuning phase
+        st.write("#### Fine-tuning Phase")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Epochs", params["finetune_epochs"])
+            st.metric("Patience", params["finetune_patience"])
+            st.metric("Fine-tuned Layers", params["finetune_layers"])
+        with col2:
+            st.metric("Optimizer", params["finetune_optimizer"]["name"])
+            st.metric("Learning Rate", f"{params['finetune_optimizer']['learning_rate']:.4f}")
+
+        # Other parameters
+        st.write("#### Other Parameters")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Loss Function", params["loss_function"])
+            st.metric("Batch Size", params["batch_size"])
+        with col2:
+            st.metric("Early Stop Metric", params["earlystop_metric"])
+
+        # Model architecture
+        st.subheader("Model Architecture")
+        st.code(specs["model_summary"], language="text")
+
+    except Exception as e:
+        st.error(f"Error loading training specifications: {e}")
+        logging.error(f"Error loading training specifications: {e}")
