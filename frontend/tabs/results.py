@@ -124,15 +124,45 @@ def display_uncertainty_metrics(metrics_dict, title="Uncertainty Metrics"):
             st.metric(label, value)
 
 
+def get_model_average_accuracy(model_name):
+    """Calculate average overall accuracy for a model across all evaluation runs."""
+    try:
+        results = load_model_results(model_name)
+        if not results:
+            return -99
+
+        # Extract accuracy values from all evaluation runs
+        accuracies = []
+        for _, result in results:
+            if "overall" in result and "accuracy" in result["overall"]:
+                accuracies.append(result["overall"]["accuracy"])
+
+        # Return average accuracy or 0.0 if no valid results
+        return sum(accuracies) / len(accuracies) if accuracies else -99
+    except Exception as e:
+        logging.error(f"Error calculating average accuracy for {model_name}: {e}")
+        return -99
+
+
 def get_models():
-    """Get list of available models with evaluation results."""
+    """Get list of available models with evaluation results and their average accuracies."""
     model_dir = Path("models")
-    return [
-        model.name
-        for model in model_dir.iterdir()
-        if model.is_dir()
-        and any(file.name.endswith("__eval_results.json") for file in model.iterdir())
-    ]
+    models_with_accuracy = []
+
+    # Recursively search for model directories with evaluation results
+    for model_path in model_dir.rglob("*"):
+        if model_path.is_dir() and any(
+            file.name.endswith("__eval_results.json") for file in model_path.iterdir()
+        ):
+            # Get relative path from models directory
+            relative_path = model_path.relative_to(model_dir)
+            model_name = str(relative_path)
+            avg_accuracy = get_model_average_accuracy(model_name)
+            models_with_accuracy.append((model_name, avg_accuracy))
+
+    # Sort by average accuracy (descending), putting invalid results at the end
+    models_with_accuracy.sort(key=lambda x: (x[1] == -99, -x[1] if x[1] != -99 else 0))
+    return models_with_accuracy
 
 
 def load_model_results(model_name):
@@ -296,7 +326,19 @@ def render_results_page():
         st.warning("No models with evaluation results found.")
         return
 
-    selected_model = st.selectbox("Select model", options=models)
+    # Create formatted options with average accuracy
+    model_options = []
+    model_names = []
+    for name, accuracy in models:
+        if accuracy == -99:
+            # Handle case where no valid results found
+            model_options.append(f"{name} (No valid results)")
+        else:
+            model_options.append(f"{name} (Avg Accuracy: {accuracy:.2%})")
+        model_names.append(name)
+
+    selected_option = st.selectbox("Select model", options=model_options)
+    selected_model = model_names[model_options.index(selected_option)]
 
     if st.button("View Results"):
         st.divider()

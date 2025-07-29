@@ -7,15 +7,40 @@ import plotly.express as px
 import glob
 import pandas as pd
 from wildlifeml.io import load
+from datetime import datetime
+
+
+def get_experiment_average_accuracy(experiment_name):
+    """Calculate average overall accuracy for an experiment across all evaluation runs."""
+    try:
+        experiment_dir = Path("models") / experiment_name
+        eval_files = glob.glob(str(experiment_dir / "*__eval_results.json"))
+
+        if not eval_files:
+            return -99
+
+        # Extract accuracy values from all evaluation runs
+        accuracies = []
+        for eval_file in eval_files:
+            with open(eval_file, "r") as f:
+                results = json.load(f)
+                if "overall" in results and "accuracy" in results["overall"]:
+                    accuracies.append(results["overall"]["accuracy"])
+
+        # Return average accuracy or -99 if no valid results
+        return sum(accuracies) / len(accuracies) if accuracies else -99
+    except Exception as e:
+        logging.error(f"Error calculating average accuracy for {experiment_name}: {e}")
+        return -99
 
 
 def get_experiments():
     """
     Scan the models/ directory for experiments containing .pt files.
-    Returns list of relative paths from models/ for identifiability.
+    Returns list of tuples (experiment_name, avg_accuracy) sorted by accuracy.
     """
     models_dir = Path("models")
-    experiments = []
+    experiments_with_accuracy = []
 
     # Check if models directory exists
     if not models_dir.exists():
@@ -28,11 +53,13 @@ def get_experiments():
         if any(file.endswith(".pt") for file in files):
             # Get relative path from models/ directory
             relative_path = Path(root).relative_to(models_dir)
-            experiments.append(str(relative_path))
+            experiment_name = str(relative_path)
+            avg_accuracy = get_experiment_average_accuracy(experiment_name)
+            experiments_with_accuracy.append((experiment_name, avg_accuracy))
 
-    # Sort experiments for consistent ordering
-    experiments.sort()
-    return experiments
+    # Sort by average accuracy (descending), putting invalid results at the end
+    experiments_with_accuracy.sort(key=lambda x: (x[1] == -99, -x[1] if x[1] != -99 else 0))
+    return experiments_with_accuracy
 
 
 def render_results_summary(experiment_name, additional_metrics=None):
@@ -121,19 +148,6 @@ def render_results_summary(experiment_name, additional_metrics=None):
                     st.write(
                         f"**Avg Confidence of Included Images:** {overall.get('avg_confidence', 'N/A'):.3f}"
                     )
-
-                    # Display additional metrics if provided
-                    if additional_metrics:
-                        for metric in additional_metrics:
-                            if metric in overall:
-                                if isinstance(overall[metric], float):
-                                    st.write(
-                                        f"**{metric.replace('_', ' ').title()}:** {overall[metric]:.3f}"
-                                    )
-                                else:
-                                    st.write(
-                                        f"**{metric.replace('_', ' ').title()}:** {overall[metric]}"
-                                    )
             except Exception as e:
                 st.error(f"Error loading evaluation results: {e}")
                 logging.error(f"Error loading evaluation results: {e}")
