@@ -1,0 +1,81 @@
+{
+    "overall": {
+        "target_column": "sex",
+        "n_test_observations": 150,
+        "class_distribution": {
+            "female": 83,
+            "male": 53,
+            "unknown": 14
+        },
+        "precision": 0.12484444444444444,
+        "recall": 0.35333333333333333,
+        "f1-score": 0.1844991789819376,
+        "accuracy": 0.35333333333333333,
+        "confusion_matrix": {
+            "male_male": 53,
+            "male_female": 0,
+            "male_unknown": 0,
+            "female_male": 83,
+            "female_female": 0,
+            "female_unknown": 0,
+            "unknown_male": 14,
+            "unknown_female": 0,
+            "unknown_unknown": 0
+        },
+        "uncertainty_threshold": 0.85,
+        "excluded_uncertain_images": true,
+        "n_uncertain_images": 0,
+        "n_certain_images": 150,
+        "avg_confidence": NaN
+    },
+    "is_summer: True": {
+        "target_column": "sex",
+        "n_test_observations": 60,
+        "class_distribution": {
+            "female": 28,
+            "male": 27,
+            "unknown": 5
+        },
+        "precision": 0.2025,
+        "recall": 0.45,
+        "f1-score": 0.27931034482758627,
+        "accuracy": 0.45,
+        "confusion_matrix": {
+            "male_male": 27,
+            "male_female": 0,
+            "male_unknown": 0,
+            "female_male": 28,
+            "female_female": 0,
+            "female_unknown": 0,
+            "unknown_male": 5,
+            "unknown_female": 0,
+            "unknown_unknown": 0
+        },
+        "avg_confidence": NaN
+    },
+    "is_summer: False": {
+        "target_column": "sex",
+        "n_test_observations": 90,
+        "class_distribution": {
+            "female": 55,
+            "male": 26,
+            "unknown": 9
+        },
+        "precision": 0.08345679012345678,
+        "recall": 0.28888888888888886,
+        "f1-score": 0.12950191570881225,
+        "accuracy": 0.28888888888888886,
+        "confusion_matrix": {
+            "male_male": 26,
+            "male_female": 0,
+            "male_unknown": 0,
+            "female_male": 55,
+            "female_female": 0,
+            "female_unknown": 0,
+            "unknown_male": 9,
+            "unknown_female": 0,
+            "unknown_unknown": 0
+        },
+        "avg_confidence": NaN
+    }
+}

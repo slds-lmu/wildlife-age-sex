@@ -22,6 +22,8 @@ def main(
     target_column: str,
     classes: list[str],
     stratify_by: str | None = None,
+    confidence_threshold: float = 0.5,
+    exclude_uncertain: bool = False,
     **kwargs,
 ):
     # Load data
@@ -33,7 +35,15 @@ def main(
     )
 
     # Evaluate model
-    results, errors = evaluate_model(model, test_data, target_column, classes, stratify_by)
+    results, errors, uncertain_images = evaluate_model(
+        model,
+        test_data,
+        target_column,
+        classes,
+        stratify_by,
+        confidence_threshold,
+        exclude_uncertain,
+    )
 
     # Save results
     timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
@@ -44,6 +54,12 @@ def main(
     save(
         errors,
         filepath=Path(working_dir) / Path(model_dir) / f"{timestamp}__eval_errors.parquet",
+    )
+    save(
+        uncertain_images,
+        filepath=Path(working_dir)
+        / Path(model_dir)
+        / f"{timestamp}__eval_uncertain_images.parquet",
     )
 
 

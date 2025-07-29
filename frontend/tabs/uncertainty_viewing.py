@@ -1,0 +1,40 @@
+import streamlit as st
+from .image_viewing import (
+    get_experiments,
+    render_results_summary,
+    render_image_slideshow,
+    render_training_specs,
+)
+
+
+def render_uncertainty_viewing_page():
+    st.title("Uncertainty Viewing")
+    st.write(
+        "Here you can view the uncertain images from each experiment that need manual labeling."
+    )
+
+    st.write("## Select Experiment")
+    experiment_name = st.selectbox("Select experiment", get_experiments())
+    if st.button("Continue", key="select_experiment"):
+        st.session_state.experiment_name = experiment_name
+
+    if "experiment_name" in st.session_state:
+        st.write(f"Experiment: {st.session_state.experiment_name}")
+
+        # Render results summary with uncertainty-specific metrics
+        render_results_summary(
+            st.session_state.experiment_name,
+            additional_metrics=["n_uncertain_images", "avg_confidence"],
+        )
+
+        # Render uncertain images slideshow
+        render_image_slideshow(
+            experiment_name=st.session_state.experiment_name,
+            file_pattern="*__eval_uncertain_images.parquet",
+            slideshow_title="Uncertain Images",
+            session_state_key="uncertain_index",
+            confidence_column="confidence_score",
+        )
+
+        with st.expander("Training Specs"):
+            render_training_specs(st.session_state.experiment_name)

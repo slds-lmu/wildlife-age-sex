@@ -95,6 +95,35 @@ def display_metrics(metrics_dict, title="Metrics"):
         st.metric("F1 Score", f"{metrics_dict['f1-score']:.2%}")
 
 
+def display_uncertainty_metrics(metrics_dict, title="Uncertainty Metrics"):
+    """Display uncertainty-related metrics."""
+    st.subheader(title)
+
+    # Check which metrics are available and create appropriate columns
+    available_metrics = []
+
+    if "uncertainty_threshold" in metrics_dict:
+        available_metrics.append(
+            ("Uncertainty Threshold", f"{metrics_dict['uncertainty_threshold']:.2f}")
+        )
+    if "n_certain_images" in metrics_dict:
+        available_metrics.append(("Certain Images", metrics_dict["n_certain_images"]))
+    if "n_uncertain_images" in metrics_dict:
+        available_metrics.append(("Uncertain Images", metrics_dict["n_uncertain_images"]))
+    if "avg_confidence" in metrics_dict:
+        available_metrics.append(("Avg Confidence", f"{metrics_dict['avg_confidence']:.3f}"))
+
+    if not available_metrics:
+        st.write("No uncertainty metrics available for this result.")
+        return
+
+    # Create columns based on available metrics
+    cols = st.columns(len(available_metrics))
+    for i, (label, value) in enumerate(available_metrics):
+        with cols[i]:
+            st.metric(label, value)
+
+
 def get_models():
     """Get list of available models with evaluation results."""
     model_dir = Path("models")
@@ -146,6 +175,14 @@ def render_results(model):
             st.write(
                 f"Test set contained {result['overall']['n_test_observations']} observations."
             )
+            st.write(
+                f"Excluded uncertain images: {result['overall']['excluded_uncertain_images']}"
+            )
+            st.write(f"Number of uncertain images: {result['overall']['n_uncertain_images']}")
+            st.write(
+                f"Avg confidence of included images: {result['overall']['avg_confidence']:.3f}"
+            )
+
             class_dist = result["overall"]["class_distribution"]
             fig = px.treemap(
                 names=list(class_dist.keys()),
@@ -157,6 +194,9 @@ def render_results(model):
             st.plotly_chart(fig, key=f"{eval_run.replace(' ', '_')}__class_distribution")
             # Display overall metrics
             display_metrics(result["overall"], "Overall Performance")
+
+            # Display uncertainty metrics
+            display_uncertainty_metrics(result["overall"], "Uncertainty Analysis")
 
             # Display overall confusion matrix
             st.subheader("Overall Confusion Matrix")
@@ -181,6 +221,8 @@ def render_results(model):
                 if stratum != "overall":
                     st.write(f"### {stratum}")
                     display_metrics(metrics)
+                    # Display uncertainty metrics for stratified results
+                    display_uncertainty_metrics(metrics, "Stratum Uncertainty Analysis")
                     st.pyplot(plot_confusion_matrix(metrics["confusion_matrix"]))
 
 

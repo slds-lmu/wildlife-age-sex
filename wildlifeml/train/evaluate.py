@@ -33,6 +33,8 @@ def evaluate_model(
     target_column: str,
     classes: list[str],
     stratify_by: str | None = None,
+    uncertainty_threshold: float = 0.5,
+    exclude_uncertain: bool = False,
 ) -> dict:
     """Evaluate a model on a test dataset. Optionally stratify
     evaluation by the provided metadatacolumn.
@@ -49,11 +51,14 @@ def evaluate_model(
         test_data: The test dataset.
         target_column: The column to evaluate the model on.
         stratify_by: The column to stratify the evaluation by.
+        uncertainty_threshold: Minimum confidence threshold (0-1). Predictions below this
+                              threshold are considered uncertain and should be manually labeled.
     Returns:
         A dictionary containing the evaluation results.
     """
     logging.info(f"Starting model evaluation with {len(test_data)} test samples")
     logging.info(f"Target column: {target_column}, Stratify by: {stratify_by}")
+    logging.info(f"Uncertainty threshold: {uncertainty_threshold}")
 
     if stratify_by and stratify_by not in test_data.columns:
         raise ValueError(f"Stratify by column {stratify_by} not found in test data.")
@@ -83,44 +88,139 @@ def evaluate_model(
     )  # adjust batch_size as needed
 
     logging.info("Generating predictions...")
-    predictions = _get_predictions(model, test_loader)
+    predictions, confidence_scores, uncertain_indices = _get_predictions(
+        model, test_loader, uncertainty_threshold
+    )
+    print(predictions)
+    print(confidence_scores)
+    print(uncertain_indices)
+
+    # Create uncertain images dataframe for manual labeling
+    uncertain_images = (
+        test_data.iloc[uncertain_indices].copy() if len(uncertain_indices) > 0 else pd.DataFrame()
+    )
+    if len(uncertain_images) > 0:
+        uncertain_images["predicted_label"] = [
+            idx_to_category[p] for p in predictions[uncertain_indices]
+        ]
+        uncertain_images["confidence_score"] = confidence_scores[uncertain_indices]
+        logging.info(
+            f"Found {len(uncertain_images)} uncertain images (confidence < {uncertainty_threshold})"
+        )
+
+    # Handle uncertain predictions based on exclude_uncertain parameter
+    if exclude_uncertain and len(uncertain_indices) > 0:
+        # Create mask for certain predictions (exclude uncertain ones)
+        certain_mask = np.ones(len(predictions), dtype=bool)
+        certain_mask[uncertain_indices] = False
+
+        # Filter data for evaluation
+        labels_filtered = labels[certain_mask]
+        predictions_filtered = predictions[certain_mask]
+        confidence_scores_filtered = confidence_scores[certain_mask]
+        test_data_filtered = test_data.iloc[certain_mask].copy()
+
+        logging.info(f"Excluding {len(uncertain_indices)} uncertain predictions from evaluation")
+        logging.info(f"Evaluating on {len(labels_filtered)} certain predictions")
+    else:
+        # Use all predictions for evaluation
+        labels_filtered = labels
+        predictions_filtered = predictions
+        confidence_scores_filtered = confidence_scores
+        test_data_filtered = test_data.copy()
+        logging.info(
+            f"Evaluating on all {len(labels_filtered)} predictions (including uncertain ones)"
+        )
+
     # Use a boolean mask as a Series aligned to test_data's index to select error rows
-    error_mask = [l != p for l, p in zip(labels, predictions)]
-    errors = test_data[error_mask].copy()
-    errors["predicted_label"] = [idx_to_category[p] for p in predictions[error_mask]]
+    error_mask = [l != p for l, p in zip(labels_filtered, predictions_filtered)]
+    errors = test_data_filtered[error_mask].copy()
+    errors["predicted_label"] = [idx_to_category[p] for p in predictions_filtered[error_mask]]
+    errors["confidence_score"] = confidence_scores_filtered[error_mask]
 
     logging.info("Calculating overall metrics...")
-    results["overall"] = _get_metrics(labels, predictions, idx_to_category, target_column)
+    results["overall"] = _get_metrics(
+        labels_filtered, predictions_filtered, idx_to_category, target_column
+    )
+    results["overall"]["uncertainty_threshold"] = uncertainty_threshold
+    results["overall"]["excluded_uncertain_images"] = exclude_uncertain
+    results["overall"]["n_uncertain_images"] = len(uncertain_indices)
+    results["overall"]["n_certain_images"] = len(labels_filtered)
+    results["overall"]["avg_confidence"] = float(np.mean(confidence_scores_filtered))
     logging.info(f"Overall accuracy: {results['overall']['accuracy']:.3f}")
+    logging.info(f"Average confidence: {results['overall']['avg_confidence']:.3f}")
 
     # Calculate stratified metrics if requested
     if stratify_by is not None:
         logging.info(f"Calculating stratified metrics by {stratify_by}...")
-        for val in test_data[stratify_by].unique():
-            subset_labels = labels[test_data[stratify_by] == val]
-            subset_predictions = predictions[test_data[stratify_by] == val]
+        for val in test_data_filtered[stratify_by].unique():
+            subset_mask = test_data_filtered[stratify_by] == val
+            subset_labels = labels_filtered[subset_mask]
+            subset_predictions = predictions_filtered[subset_mask]
+            subset_confidences = confidence_scores_filtered[subset_mask]
             logging.debug(f"Stratum {val}: {len(subset_labels)} samples")
             stratum_key = f"{stratify_by}: {val}"
             results[stratum_key] = _get_metrics(
                 subset_labels, subset_predictions, idx_to_category, target_column
             )
+            results[stratum_key]["avg_confidence"] = float(np.mean(subset_confidences))
             logging.info(f"{val} accuracy: {results[stratum_key]['accuracy']:.3f}")
 
-    return results, errors
+    return results, errors, uncertain_images
 
 
-def _get_predictions(model: Module, data_loader: DataLoader) -> np.ndarray:
-    """Helper function to get model predictions for a dataset using a DataLoader."""
+def _get_predictions(
+    model: Module, data_loader: DataLoader, uncertainty_threshold: float = 0.8
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Helper function to get model predictions for a dataset using a DataLoader.
+
+    Args:
+        model: The model to evaluate
+        data_loader: DataLoader containing the test data
+        uncertainty_threshold: Minimum confidence threshold (0-1). Predictions below this
+                              threshold are considered uncertain and should be manually labeled.
+
+    Returns:
+        tuple: (predictions, confidence_scores, uncertain_indices)
+            - predictions: Array of predicted class indices
+            - confidence_scores: Array of confidence scores for each prediction (normalized to sum to 1)
+            - uncertain_indices: Array of indices where confidence < threshold
+    """
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.eval()
     preds = []
+    confidences = []
+    uncertain_indices = []
+    current_idx = 0
+
     with torch.no_grad():
         for batch in data_loader:
             inputs = batch[0].to(device)
             outputs = model(inputs)
+
+            # Apply softmax to get normalized probabilities (sum to 1)
             probs = torch.softmax(outputs, dim=1)
-            preds.append(probs.argmax(dim=1).cpu())
-    return torch.cat(preds).numpy()
+
+            # Get predictions and confidence scores
+            batch_preds = probs.argmax(dim=1).cpu()
+            batch_confidences = probs.max(dim=1)[0].cpu()  # Max probability for each sample
+
+            # Identify uncertain predictions
+            uncertain_mask = batch_confidences < uncertainty_threshold
+            batch_uncertain_indices = torch.where(uncertain_mask)[0] + current_idx
+
+            preds.append(batch_preds)
+            confidences.append(batch_confidences)
+            uncertain_indices.append(batch_uncertain_indices)
+
+            current_idx += len(batch_preds)
+
+    # Concatenate all batches
+    predictions = torch.cat(preds).numpy()
+    confidence_scores = torch.cat(confidences).numpy()
+    uncertain_indices = torch.cat(uncertain_indices).numpy() if uncertain_indices else np.array([])
+
+    return predictions, confidence_scores, uncertain_indices
 
 
 def _get_metrics(

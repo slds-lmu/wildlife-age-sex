@@ -61,3 +61,5 @@ finetune_layers = 3
 
 # Provide stratified evaluation on specified colunm, only supports stratification on one column
 stratify_by = "is_summer"
+confidence_threshold = 0.85
+exclude_uncertain = true

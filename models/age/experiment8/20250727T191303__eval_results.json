@@ -1,0 +1,75 @@
+{
+    "overall": {
+        "target_column": "age",
+        "n_test_observations": 51,
+        "class_distribution": {
+            "adult": 47,
+            "yearling": 3,
+            "unknown": 1
+        },
+        "precision": 0.8492887351018839,
+        "recall": 0.9215686274509803,
+        "f1-score": 0.883953581432573,
+        "accuracy": 0.9215686274509803,
+        "confusion_matrix": {
+            "yearling_yearling": 0,
+            "yearling_juvenile": 3,
+            "yearling_adult": 0,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 47,
+            "juvenile_adult": 0,
+            "adult_yearling": 0,
+            "adult_juvenile": 1,
+            "adult_adult": 0
+        },
+        "uncertainty_threshold": 0.85,
+        "excluded_uncertain_images": true,
+        "n_uncertain_images": 99,
+        "n_certain_images": 51,
+        "avg_confidence": 0.8943387269973755
+    },
+    "is_summer: True": {
+        "target_column": "age",
+        "n_test_observations": 17,
+        "class_distribution": {
+            "adult": 16,
+            "yearling": 1
+        },
+        "precision": 0.8858131487889274,
+        "recall": 0.9411764705882353,
+        "f1-score": 0.912655971479501,
+        "accuracy": 0.9411764705882353,
+        "confusion_matrix": {
+            "yearling_yearling": 0,
+            "yearling_juvenile": 1,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 16
+        },
+        "avg_confidence": 0.8990831971168518
+    },
+    "is_summer: False": {
+        "target_column": "age",
+        "n_test_observations": 34,
+        "class_distribution": {
+            "adult": 31,
+            "yearling": 2,
+            "unknown": 1
+        },
+        "precision": 0.8313148788927336,
+        "recall": 0.9117647058823529,
+        "f1-score": 0.869683257918552,
+        "accuracy": 0.9117647058823529,
+        "confusion_matrix": {
+            "yearling_yearling": 0,
+            "yearling_juvenile": 2,
+            "yearling_adult": 0,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 31,
+            "juvenile_adult": 0,
+            "adult_yearling": 0,
+            "adult_juvenile": 1,
+            "adult_adult": 0
+        },
+        "avg_confidence": 0.8919664621353149
+    }
+}

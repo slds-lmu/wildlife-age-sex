@@ -4,6 +4,7 @@ import streamlit as st
 from tabs.annotation import render_annotation_page
 from tabs.results import render_results_page
 from tabs.error_viewing import render_error_viewing_page
+from tabs.uncertainty_viewing import render_uncertainty_viewing_page
 
 
 def home():
@@ -28,6 +29,7 @@ page_names_to_funcs = {
     "Annotation Interface": render_annotation_page,
     "Model Results": render_results_page,
     "Error Viewing": render_error_viewing_page,
+    "Uncertainty Viewing": render_uncertainty_viewing_page,
 }
 
 page_name = st.sidebar.selectbox("Navigate to", page_names_to_funcs.keys())

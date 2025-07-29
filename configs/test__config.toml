@@ -20,6 +20,7 @@ classes = ["male", "female", "unknown"]
     # Parquet file with image, label, and metadata columns
     raw_data_filepath = "test_data/labeled_bbox_data.parquet"
     # Location for results of `preprocess.py` to use in `train` and `evaluate` steps.
+    preprocessed_data_filepath = "data/preprocessed/test/preprocessed_test_data.parquet"
     train_filepath = "data/test/train.parquet"
     test_filepath = "data/test/test.parquet"
 
@@ -59,3 +60,4 @@ batch_size = 32
 
 # Provide stratified evaluation on specified colunm, only supports stratification on one column
 stratify_by = "dummy_metadata"
+confidence_threshold = 0.5
