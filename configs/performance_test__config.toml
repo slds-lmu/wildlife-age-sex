@@ -64,5 +64,5 @@ finetune_epochs = 30
 
 # Provide stratified evaluation on specified colunm, only supports stratification on one column
 stratify_by = "is_summer"
-confidence_threshold = 0.85
+confidence_threshold = 0.75
 exclude_uncertain = true
