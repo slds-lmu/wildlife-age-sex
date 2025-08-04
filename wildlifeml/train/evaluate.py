@@ -146,7 +146,7 @@ def evaluate_model(
     results["overall"]["excluded_uncertain_images"] = exclude_uncertain
     results["overall"]["n_uncertain_images"] = len(uncertain_indices)
     results["overall"]["n_certain_images"] = len(labels_filtered)
-    results["overall"]["avg_confidence"] = float(np.mean(confidence_scores_filtered))
+    results["overall"]["avg_confidence"] = float(np.nanmean(confidence_scores_filtered))
     logging.info(f"Overall accuracy: {results['overall']['accuracy']:.3f}")
     logging.info(f"Average confidence: {results['overall']['avg_confidence']:.3f}")
 
@@ -163,7 +163,7 @@ def evaluate_model(
             results[stratum_key] = _get_metrics(
                 subset_labels, subset_predictions, idx_to_category, target_column
             )
-            results[stratum_key]["avg_confidence"] = float(np.mean(subset_confidences))
+            results[stratum_key]["avg_confidence"] = float(np.nanmean(subset_confidences))
             logging.info(f"{val} accuracy: {results[stratum_key]['accuracy']:.3f}")
 
     return results, errors, uncertain_images
@@ -198,8 +198,28 @@ def _get_predictions(
             inputs = batch[0].to(device)
             outputs = model(inputs)
 
+            # Check for problematic outputs before softmax
+            if torch.isnan(outputs).any() or torch.isinf(outputs).any():
+                logging.warning(f"Found NaN/Inf in model outputs: {outputs}")
+
+            # Check for extreme values that might cause numerical issues
+            if torch.abs(outputs).max() > 100:
+                logging.warning(
+                    f"Found large logit values: max={outputs.max():.2f}, min={outputs.min():.2f}"
+                )
+
             # Apply softmax to get normalized probabilities (sum to 1)
-            probs = torch.softmax(outputs, dim=1)
+            # Use log_softmax + exp for better numerical stability
+            log_probs = torch.log_softmax(outputs, dim=1)
+            probs = torch.exp(log_probs)
+
+            # Check for NaN in probabilities after softmax
+            if torch.isnan(probs).any():
+                logging.warning(f"Found NaN in softmax probabilities: {probs}")
+                # Replace NaN with uniform distribution
+                probs = torch.where(
+                    torch.isnan(probs), torch.ones_like(probs) / probs.shape[1], probs
+                )
 
             # Get predictions and confidence scores
             batch_preds = probs.argmax(dim=1).cpu()
