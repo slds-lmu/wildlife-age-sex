@@ -42,9 +42,6 @@ def evaluate_model(
     Evaluation metrics:
     - Precision, recall, f1-score, accuracy
     - Confusion matrix
-    - ROC curve
-    - PR curve
-    - Confusion matrix
 
     Args:
         model: The model to evaluate.
