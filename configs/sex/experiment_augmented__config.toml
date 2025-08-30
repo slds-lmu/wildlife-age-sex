@@ -1,0 +1,49 @@
+# This TOML file demonstrates the enhanced data augmentation features
+# for wildlife sex classification.
+
+[globals]
+working_dir = "." 
+target_column = "sex"
+classes = ["female", "male", "unknown"]
+
+[io]
+    [io.data]
+    raw_data_filepath = "data/preprocessed/12072025_clean_labeled_bbox_data.parquet"
+    preprocessed_data_filepath = "data/preprocessed/13072025_cropped_data.parquet"
+    train_filepath = "data/sex/experiment_augmented/train.parquet"
+    test_filepath = "data/sex/experiment_augmented/test.parquet"
+
+    [io.model]
+    model_dir = "models/sex/experiment_augmented"
+
+    [io.logging]
+    log_level = "INFO"
+
+[preprocess]
+confidence_threshold = 0.3
+cropping_mode = "shift" 
+rescale_to = [224, 224]
+
+[train]
+stratify_by = "sex"
+backbone_model = "densenet161"
+batch_size = 32
+
+# Enhanced training parameters with augmentation
+transfer_epochs = 20
+transfer_learning_rate = 0.005
+finetune_layers = 5
+finetune_optimizer = "sgd"
+finetune_epochs = 50
+
+# Augmentation configuration
+# Options: "light", "medium", "strong"
+augmentation_strength = "medium"
+
+# Enable quality-simulating augmentations (blur, noise, compression artifacts)
+enable_quality_simulation = true
+
+[evaluate]
+stratify_by = "is_summer"
+confidence_threshold = 0.75
+exclude_uncertain = true 

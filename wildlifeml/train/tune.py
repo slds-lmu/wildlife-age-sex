@@ -7,6 +7,11 @@ from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from ..utils import convert_to_numeric_indices, get_model_summary
+from ..preprocess.augmentation import (
+    WildlifeAugmentationDataset,
+    ExpandedAugmentationDataset,
+    create_augmentation_pipeline,
+)
 
 
 def tune_model(
@@ -128,11 +133,50 @@ def tune_model(
     # Convert labels to tensor
     labels = torch.tensor(labels, dtype=torch.float)
 
-    # Create dataset and dataloader
-    dataset = TensorDataset(inputs, labels)
-    train_size = int(0.85 * len(dataset))
-    val_size = len(dataset) - train_size
-    train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+    # Create augmentation pipeline
+    augmentation_strength = kwargs.get("augmentation_strength", "medium")
+    enable_quality_simulation = kwargs.get("enable_quality_simulation", True)
+
+    logging.info(f"Creating augmentation pipeline with strength: {augmentation_strength}")
+    augmentation = create_augmentation_pipeline(
+        augmentation_strength=augmentation_strength,
+        enable_quality_simulation=enable_quality_simulation,
+        seed=42,  # Fixed seed for reproducibility
+    )
+
+    # Store augmentation config in tuning specs
+    tuning_specs["augmentation_config"] = {
+        "strength": augmentation_strength,
+        "enable_quality_simulation": enable_quality_simulation,
+    }
+
+    # Create dataset and dataloader with augmentation
+    train_size = int(0.85 * len(inputs))
+
+    # Split data
+    train_indices = torch.randperm(len(inputs))[:train_size]
+    val_indices = torch.randperm(len(inputs))[train_size:]
+
+    # Create expanded training dataset (original + augmented images)
+    # This doubles the training set size by including both original and augmented versions
+    train_dataset = ExpandedAugmentationDataset(
+        images=inputs[train_indices],
+        labels=labels[train_indices],
+        augmentation=augmentation,
+        is_training=True,
+    )
+
+    logging.info(
+        f"Training dataset expanded from {len(inputs[train_indices])} to {len(train_dataset)} images (2x)"
+    )
+
+    # Create validation dataset (no augmentation)
+    val_dataset = WildlifeAugmentationDataset(
+        images=inputs[val_indices],
+        labels=labels[val_indices],
+        augmentation=None,
+        is_training=False,
+    )
 
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers

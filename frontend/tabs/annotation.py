@@ -51,13 +51,16 @@ def render_config_picker():
             # Store config in session_state before rerun
             st.session_state.annotation_config = annotation_config
             st.session_state.image_dir = image_dir
-            annotations_path = Path("data") / image_dir / "annotations.csv"
+            annotations_path = Path("data") / image_dir / "annotations.json"
             st.session_state.annotations_path = annotations_path
             st.rerun()
 
         config_df = pd.DataFrame([{"class_name": "ex_class", "class_labels": "label_1, label_2"}])
         st.write("## Edit Class Definitions")
-        st.info("Class names must be unique. Class labels must be a comma separated list.")
+        st.write("Class names must be unique. Class labels must be a comma separated list.")
+        st.info(
+            "The first class in each list will be used as the default class. Tip: put the most common class first for extra speed!"
+        )
         config_df = st.data_editor(
             config_df[["class_name", "class_labels"]],
             use_container_width=True,
@@ -81,7 +84,7 @@ def render_config_picker():
             # Store config in session_state before rerun
             st.session_state.annotation_config = annotation_config
             st.session_state.image_dir = image_dir
-            annotations_path = Path("data") / image_dir / "annotations.csv"
+            annotations_path = Path("data") / image_dir / "annotations.json"
             st.session_state.annotations_path = annotations_path
             st.rerun()
 
@@ -118,7 +121,20 @@ def render_coding_interface(image_dir: str, annotations_path: str, annotation_co
         st.error("No bounding boxes to annotate.")
         return
 
-    bbox = unlabeled_bboxes[0]
+    # Get total number of images in directory and completed annotations
+    total_images = len(bboxes)
+    completed_annotations = get_completed_annotation_count(annotations_path)
+
+    # Initialize current index in session state if not present
+    if "current_bbox_index" not in st.session_state:
+        st.session_state.current_bbox_index = 0
+
+    # Ensure index is within bounds
+    if st.session_state.current_bbox_index >= len(unlabeled_bboxes):
+        st.session_state.current_bbox_index = 0
+
+    bbox = unlabeled_bboxes[st.session_state.current_bbox_index]
+
     with st.container():
         col1, col2 = st.columns(2)
         with col1:
@@ -128,15 +144,38 @@ def render_coding_interface(image_dir: str, annotations_path: str, annotation_co
         with col2:
             st.subheader("Annotation")
             bbox_annotations = render_bbox_annotation_options(bbox, annotation_config)
-            # Next button to save and move to next bbox
-            if st.button("Save & Next", key=f"save_next_{bbox['bbox_id']}"):
-                # Append annotation to CSV
-                df = pd.DataFrame([bbox_annotations])
-                if annotations_path.exists():
-                    df.to_csv(annotations_path, mode="a", header=False, index=False)
-                else:
-                    df.to_csv(annotations_path, mode="w", header=True, index=False)
-                st.rerun()
+
+            # Navigation buttons
+            col_prev, col_save, col_skip = st.columns(3)
+
+            with col_prev:
+                if st.button(
+                    "← Previous",
+                    key=f"prev_{bbox['bbox_id']}",
+                    disabled=st.session_state.current_bbox_index == 0,
+                ):
+                    st.session_state.current_bbox_index = max(
+                        0, st.session_state.current_bbox_index - 1
+                    )
+                    st.rerun()
+
+            with col_save:
+                if st.button("Save/Next", key=f"save_next_{bbox['bbox_id']}"):
+                    # Append annotation to JSON
+                    save_annotation_to_json(annotations_path, bbox_annotations)
+                    # Reset index to 0 since the current bbox will be filtered out
+                    st.session_state.current_bbox_index = 0
+                    st.rerun()
+
+            with col_skip:
+                if st.button("Skip →", key=f"skip_{bbox['bbox_id']}"):
+                    # Move to next bbox without saving
+                    st.session_state.current_bbox_index += 1
+                    st.rerun()
+
+            # Progress indicator - show total images vs completed annotations
+            st.progress(completed_annotations / total_images if total_images > 0 else 0)
+            st.caption(f"Already Annotated: {completed_annotations} of {total_images} images")
 
 
 def load_bbox_results(image_dir: str):
@@ -157,7 +196,7 @@ def load_bbox_results(image_dir: str):
     results = []
     for key, value in bbox_data.items():
         result = {
-            "image_path": Path("data") / image_dir / value.get("file"),
+            "image_path": value.get("image_path"),
             "bbox": value.get("bbox"),
             "category": value.get("category"),
             "confidence": value.get("confidence"),
@@ -168,9 +207,28 @@ def load_bbox_results(image_dir: str):
     return results
 
 
+def save_annotation_to_json(annotations_path: str, bbox_annotations: dict):
+    """Save annotation to JSON file."""
+    # Load existing annotations or create new list
+    try:
+        with open(annotations_path, "r") as f:
+            annotations = json.load(f)
+    except FileNotFoundError:
+        annotations = []
+
+    # Add new annotation
+    annotations.append(bbox_annotations)
+
+    # Save back to file
+    with open(annotations_path, "w") as f:
+        json.dump(annotations, f, indent=2)
+
+
 def get_bboxes_to_code(annotations_path: str, bboxes: list):
     try:
-        existing_annotations = pd.read_csv(annotations_path).bbox_id.tolist()
+        with open(annotations_path, "r") as f:
+            annotations = json.load(f)
+        existing_annotations = [ann["image_id"] for ann in annotations]
     except FileNotFoundError:
         existing_annotations = []
 
@@ -219,8 +277,11 @@ def render_bbox_image(bbox: dict):
 
 def render_bbox_annotation_options(bbox: dict, annotation_config: dict):
     bbox_annotations = {
-        "bbox_id": bbox["bbox_id"],
+        "image_id": bbox["bbox_id"],
         "image_path": bbox["image_path"],
+        "bbox": bbox["bbox"],
+        "category": bbox["category"],
+        "confidence": bbox["confidence"],
     }
     for cls in annotation_config["classes"]:
         label = cls["class_name"]
@@ -239,3 +300,14 @@ def exit_annotation():
     st.session_state.pop("annotation_config")
     st.session_state.pop("image_dir")
     st.session_state.pop("annotations_path")
+    st.session_state.pop("current_bbox_index", None)
+
+
+def get_completed_annotation_count(annotations_path: str):
+    """Get the number of completed annotations."""
+    try:
+        with open(annotations_path, "r") as f:
+            annotations = json.load(f)
+        return len(annotations)
+    except FileNotFoundError:
+        return 0

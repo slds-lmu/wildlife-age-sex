@@ -59,7 +59,10 @@ def postprocess_image_data(data: pd.DataFrame, filepath: Path) -> pd.DataFrame:
     image_dir = filepath.parent / filepath.stem
     image_dir.mkdir(exist_ok=True)
 
-    data.loc[:, "image_path"] = data.image_id.apply(lambda id: str(image_dir / (id + ".jpg")))
+    # Remove any existing .jpg extension before adding it to avoid doubled extensions
+    data.loc[:, "image_path"] = data.image_id.apply(
+        lambda id: str(image_dir / (id.replace(".jpg", "").replace(".JPG", "") + ".jpg"))
+    )
 
     for __, row in data.iterrows():
         if row["image"] is not None:

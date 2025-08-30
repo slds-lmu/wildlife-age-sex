@@ -51,40 +51,159 @@ args = [
     {name="IMAGE_DIR", options=["--image-dir", "-i"], help="Path to image directory on which to run MegaDetector"}
 ]
 
-# Run pipeline from top-level wildlife-age-sex directory
+# Individual script commands
+[tool.poe.tasks.preprocess]
+shell = """
+    # Check if CONFIG_PATH is a directory or single file
+    if [ -d "$CONFIG_PATH" ]; then
+        echo "Processing all .toml config files in directory: $CONFIG_PATH" && \
+        for config_file in "$CONFIG_PATH"/*.toml; do
+            if [ -f "$config_file" ]; then
+                echo "Starting preprocessing with config: $config_file" && \
+                uv sync --group pipeline && \
+                uv pip install -U opencv-python && \
+                uv run scripts/preprocess.py --config "$config_file" && \
+                echo "Preprocessing completed for: $config_file"
+            fi
+        done
+        echo "All config files in directory processed successfully!"
+    else
+        echo "Starting preprocessing with config: $CONFIG_PATH" && \
+        uv sync --group pipeline && \
+        uv pip install -U opencv-python && \
+        uv run scripts/preprocess.py --config "$CONFIG_PATH" && \
+        echo "Preprocessing completed successfully!"
+    fi
+"""
+args = [
+    {name="CONFIG_PATH", options=["-c", "--config"], help="Path to config file or directory containing .toml config files relative to wd."}
+]
 
+[tool.poe.tasks.train]
+shell = """
+    # Check if CONFIG_PATH is a directory or single file
+    if [ -d "$CONFIG_PATH" ]; then
+        echo "Processing all .toml config files in directory: $CONFIG_PATH" && \
+        for config_file in "$CONFIG_PATH"/*.toml; do
+            if [ -f "$config_file" ]; then
+                echo "Starting training with config: $config_file" && \
+                uv sync --group pipeline && \
+                uv pip install -U opencv-python && \
+                uv run scripts/train.py --config "$config_file" && \
+                echo "Training completed for: $config_file"
+            fi
+        done
+        echo "All config files in directory processed successfully!"
+    else
+        echo "Starting training with config: $CONFIG_PATH" && \
+        uv sync --group pipeline && \
+        uv pip install -U opencv-python && \
+        uv run scripts/train.py --config "$CONFIG_PATH" && \
+        echo "Training completed successfully!"
+    fi
+"""
+args = [
+    {name="CONFIG_PATH", options=["-c", "--config"], help="Path to config file or directory containing .toml config files relative to wd."}
+]
+
+[tool.poe.tasks.evaluate]
+shell = """
+    # Check if CONFIG_PATH is a directory or single file
+    if [ -d "$CONFIG_PATH" ]; then
+        echo "Processing all .toml config files in directory: $CONFIG_PATH" && \
+        for config_file in "$CONFIG_PATH"/*.toml; do
+            if [ -f "$config_file" ]; then
+                echo "Starting evaluation with config: $config_file" && \
+                uv sync --group pipeline && \
+                uv pip install -U opencv-python && \
+                uv run scripts/evaluate.py --config "$config_file" && \
+                echo "Evaluation completed for: $config_file"
+            fi
+        done
+        echo "All config files in directory processed successfully!"
+    else
+        echo "Starting evaluation with config: $CONFIG_PATH" && \
+        uv sync --group pipeline && \
+        uv pip install -U opencv-python && \
+        uv run scripts/evaluate.py --config "$CONFIG_PATH" && \
+        echo "Evaluation completed successfully!"
+    fi
+"""
+args = [
+    {name="CONFIG_PATH", options=["-c", "--config"], help="Path to config file or directory containing .toml config files relative to wd."}
+]
+
+# Run pipeline from top-level wildlife-age-sex directory
 [tool.poe.tasks.run-pipeline]
 # updating opencv-python resolves versioning issue
 shell = """
-    echo "Starting pipeline execution with config: $CONFIG_PATH" && \
-    uv sync --group pipeline && \
-    uv pip install -U opencv-python 
-    echo "Dependencies synced. Starting preprocessing..." && \
-    uv run scripts/preprocess.py --config $CONFIG_PATH && \
-    echo "Preprocessing completed. Starting training..." && \
-    uv run scripts/train.py --config $CONFIG_PATH && \
-    echo "Training completed. Starting evaluation..." && \
-    uv run scripts/evaluate.py --config $CONFIG_PATH && \
-    echo "Pipeline execution completed successfully!"
+    # Check if CONFIG_PATH is a directory or single file
+    if [ -d "$CONFIG_PATH" ]; then
+        echo "Processing all .toml config files in directory: $CONFIG_PATH" && \
+        for config_file in "$CONFIG_PATH"/*.toml; do
+            if [ -f "$config_file" ]; then
+                echo "Starting pipeline execution with config: $config_file" && \
+                uv sync --group pipeline && \
+                uv pip install -U opencv-python && \
+                echo "Dependencies synced. Starting preprocessing..." && \
+                uv run scripts/preprocess.py --config "$config_file" && \
+                echo "Preprocessing completed. Starting training..." && \
+                uv run scripts/train.py --config "$config_file" && \
+                echo "Training completed. Starting evaluation..." && \
+                uv run scripts/evaluate.py --config "$config_file" && \
+                echo "Pipeline execution completed for: $config_file"
+            fi
+        done
+        echo "All config files in directory processed successfully!"
+    else
+        echo "Starting pipeline execution with config: $CONFIG_PATH" && \
+        uv sync --group pipeline && \
+        uv pip install -U opencv-python && \
+        echo "Dependencies synced. Starting preprocessing..." && \
+        uv run scripts/preprocess.py --config "$CONFIG_PATH" && \
+        echo "Preprocessing completed. Starting training..." && \
+        uv run scripts/train.py --config "$CONFIG_PATH" && \
+        echo "Training completed. Starting evaluation..." && \
+        uv run scripts/evaluate.py --config "$CONFIG_PATH" && \
+        echo "Pipeline execution completed successfully!"
+    fi
 """
 args = [
-    {name="CONFIG_PATH", options=["-c", "--config"], default="configs/test__config.toml", help="Path to config file relative to wd."}
+    {name="CONFIG_PATH", options=["-c", "--config"], default="configs/test__config.toml", help="Path to config file or directory containing .toml config files relative to wd."}
 ]
 
 [tool.poe.tasks.run-experiment]
 # updating opencv-python resolves versioning issue
 shell = """
-    echo "Starting pipeline execution with config: $CONFIG_PATH" && \
-    uv sync --group pipeline && \
-    uv pip install -U opencv-python 
-    echo "Dependencies synced. Using preprocessed data. Starting training..." && \
-    uv run scripts/train.py --config $CONFIG_PATH && \
-    echo "Training completed. Starting evaluation..." && \
-    uv run scripts/evaluate.py --config $CONFIG_PATH && \
-    echo "Pipeline execution completed successfully!"
+    # Check if CONFIG_PATH is a directory or single file
+    if [ -d "$CONFIG_PATH" ]; then
+        echo "Processing all .toml config files in directory: $CONFIG_PATH" && \
+        for config_file in "$CONFIG_PATH"/*.toml; do
+            if [ -f "$config_file" ]; then
+                echo "Starting experiment execution with config: $config_file" && \
+                uv sync --group pipeline && \
+                uv pip install -U opencv-python && \
+                echo "Dependencies synced. Using preprocessed data. Starting training..." && \
+                uv run scripts/train.py --config "$config_file" && \
+                echo "Training completed. Starting evaluation..." && \
+                uv run scripts/evaluate.py --config "$config_file" && \
+                echo "Experiment execution completed for: $config_file"
+            fi
+        done
+        echo "All config files in directory processed successfully!"
+    else
+        echo "Starting experiment execution with config: $CONFIG_PATH" && \
+        uv sync --group pipeline && \
+        uv pip install -U opencv-python && \
+        echo "Dependencies synced. Using preprocessed data. Starting training..." && \
+        uv run scripts/train.py --config "$CONFIG_PATH" && \
+        echo "Training completed. Starting evaluation..." && \
+        uv run scripts/evaluate.py --config "$CONFIG_PATH" && \
+        echo "Experiment execution completed successfully!"
+    fi
 """
 args = [
-    {name="CONFIG_PATH", options=["-c", "--config"], default="configs/test__config.toml", help="Path to config file relative to wd."}
+    {name="CONFIG_PATH", options=["-c", "--config"], default="configs/test__config.toml", help="Path to config file or directory containing .toml config files relative to wd."}
 ]
 
 [tool.poe.tasks.build-frontend]

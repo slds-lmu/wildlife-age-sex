@@ -1,0 +1,75 @@
+{
+    "overall": {
+        "target_column": "sex",
+        "n_test_observations": 93,
+        "class_distribution": {
+            "female": 57,
+            "male": 29,
+            "unknown": 7
+        },
+        "precision": 0.815469996531391,
+        "recall": 0.8817204301075269,
+        "f1-score": 0.84728773229722,
+        "accuracy": 0.8817204301075269,
+        "confusion_matrix": {
+            "male_male": 28,
+            "male_female": 1,
+            "male_unknown": 0,
+            "female_male": 3,
+            "female_female": 54,
+            "female_unknown": 0,
+            "unknown_male": 0,
+            "unknown_female": 7,
+            "unknown_unknown": 0
+        },
+        "uncertainty_threshold": 0.75,
+        "excluded_uncertain_images": true,
+        "n_uncertain_images": 57,
+        "n_certain_images": 93,
+        "avg_confidence": 0.8830398917198181
+    },
+    "is_summer: False": {
+        "target_column": "sex",
+        "n_test_observations": 51,
+        "class_distribution": {
+            "female": 30,
+            "male": 14,
+            "unknown": 7
+        },
+        "precision": 0.6768207282913165,
+        "recall": 0.7843137254901961,
+        "f1-score": 0.7265962795374561,
+        "accuracy": 0.7843137254901961,
+        "confusion_matrix": {
+            "male_male": 13,
+            "male_female": 1,
+            "male_unknown": 0,
+            "female_male": 3,
+            "female_female": 27,
+            "female_unknown": 0,
+            "unknown_male": 0,
+            "unknown_female": 7,
+            "unknown_unknown": 0
+        },
+        "avg_confidence": 0.8721832633018494
+    },
+    "is_summer: True": {
+        "target_column": "sex",
+        "n_test_observations": 42,
+        "class_distribution": {
+            "female": 27,
+            "male": 15
+        },
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "accuracy": 1.0,
+        "confusion_matrix": {
+            "male_male": 15,
+            "male_female": 0,
+            "female_male": 0,
+            "female_female": 27
+        },
+        "avg_confidence": 0.896223247051239
+    }
+}
