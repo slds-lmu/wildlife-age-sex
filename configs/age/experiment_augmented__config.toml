@@ -20,7 +20,7 @@ classes = ["yearling", "juvenile", "adult", "unknown"]
     log_level = "INFO"
 
 [preprocess]
-confidence_threshold = 0.5
+confidence_threshold = 0.96
 cropping_mode = "shift" 
 rescale_to = [224, 224]
 

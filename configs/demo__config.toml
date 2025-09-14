@@ -61,4 +61,4 @@ batch_size = 4
 
 # Provide stratified evaluation on specified colunm, only supports stratification on one column
 stratify_by = "metadata"
-confidence_threshold = 0.5
+confidence_threshold = 0.96
