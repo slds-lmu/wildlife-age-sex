@@ -8,8 +8,8 @@ This script:
 3. Converts to the required Parquet format for training
 
 Usage:
-    uv run scripts/data_enrichment.py  # Uses demo data by default
-    uv run scripts/data_enrichment.py --annotation-dirs data/dir1 data/dir2 --metadata-file data/metadata.csv
+    poe run-enrichment  # Uses demo data by default
+    poe run-enrichment --annotation-dirs data/dir1 data/dir2 --metadata-file data/metadata.csv
 """
 
 import json

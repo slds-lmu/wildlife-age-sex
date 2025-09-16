@@ -54,7 +54,7 @@ args = [
 [tool.poe.tasks.run-enrichment]
 shell = """
     uv sync --group enrichment
-    uv run scripts/data_enrichment.py --annotation-dirs $ANNOTATION_DIRS --metadata-file $METADATA_FILE --output-path $OUTPUT_PATH
+    uv run scripts/enrichment.py --annotation-dirs $ANNOTATION_DIRS --metadata-file $METADATA_FILE --output-path $OUTPUT_PATH
 """
 args = [
     {name="ANNOTATION_DIRS", options=["--annotation-dirs", "-a"], help="List of directories containing annotations.json files", nargs="+", default=["data/demo"]},
