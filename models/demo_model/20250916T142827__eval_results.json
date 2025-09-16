@@ -1,0 +1,36 @@
+{
+    "overall": {
+        "target_column": "ex_class",
+        "n_test_observations": 3,
+        "class_distribution": {
+            "label_2": 2,
+            "label_1": 1
+        },
+        "precision": 0.4444444444444444,
+        "recall": 0.6666666666666666,
+        "f1-score": 0.5333333333333333,
+        "accuracy": 0.6666666666666666,
+        "confusion_matrix": {
+            "label_1_label_1": 0,
+            "label_1_label_2": 1,
+            "label_2_label_1": 0,
+            "label_2_label_2": 2
+        },
+        "uncertainty_threshold": 0.96,
+        "excluded_uncertain_images": false,
+        "n_uncertain_images": 1,
+        "n_certain_images": 3,
+        "avg_confidence": 0.9641144871711731
+    },
+    "weather: None": {
+        "target_column": "ex_class",
+        "n_test_observations": 0,
+        "class_distribution": {},
+        "precision": NaN,
+        "recall": NaN,
+        "f1-score": NaN,
+        "accuracy": NaN,
+        "confusion_matrix": {},
+        "avg_confidence": NaN
+    }
+}
