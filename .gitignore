@@ -187,9 +187,8 @@ cython_debug/
 
 # Large files (may exceed GitHub's size limit)
 data/*
-!data/test/
+!data/demo/
 *.parquet
 # keep error tables from evaluation
-models/**/**/*.jpg
 !models/**/*.parquet
 

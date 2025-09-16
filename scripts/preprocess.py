@@ -37,7 +37,7 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="configs/test__config.toml")
+    parser.add_argument("--config", type=str, default="configs/demo__config.toml")
     args = parser.parse_args()
 
     with open(args.config, "rb") as f:

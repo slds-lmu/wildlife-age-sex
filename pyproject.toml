@@ -45,10 +45,21 @@ args = [
 [tool.poe.tasks.run-megadetector]
 shell = """
     uv sync --group megadetector
-    uv run megadetector.py --image-dir $IMAGE_DIR
+    uv run scripts/megadetector.py --image-dir $IMAGE_DIR
 """
 args = [
     {name="IMAGE_DIR", options=["--image-dir", "-i"], help="Path to image directory on which to run MegaDetector"}
+]
+
+[tool.poe.tasks.run-enrichment]
+shell = """
+    uv sync --group enrichment
+    uv run scripts/data_enrichment.py --annotation-dirs $ANNOTATION_DIRS --metadata-file $METADATA_FILE --output-path $OUTPUT_PATH
+"""
+args = [
+    {name="ANNOTATION_DIRS", options=["--annotation-dirs", "-a"], help="List of directories containing annotations.json files", nargs="+", default=["data/demo"]},
+    {name="METADATA_FILE", options=["--metadata-file", "-m"], help="Metadata file (CSV or Parquet) to join with annotations", default="data/demo/sample_metadata.csv"},
+    {name="OUTPUT_PATH", options=["--output-path", "-o"], help="Output path for the enriched parquet file", default="data/demo/enriched_data.parquet"}
 ]
 
 # Individual script commands
@@ -169,7 +180,7 @@ shell = """
     fi
 """
 args = [
-    {name="CONFIG_PATH", options=["-c", "--config"], default="configs/test__config.toml", help="Path to config file or directory containing .toml config files relative to wd."}
+    {name="CONFIG_PATH", options=["-c", "--config"], default="configs/demo__config.toml", help="Path to config file or directory containing .toml config files relative to wd."}
 ]
 
 [tool.poe.tasks.run-experiment]
@@ -203,7 +214,7 @@ shell = """
     fi
 """
 args = [
-    {name="CONFIG_PATH", options=["-c", "--config"], default="configs/test__config.toml", help="Path to config file or directory containing .toml config files relative to wd."}
+    {name="CONFIG_PATH", options=["-c", "--config"], default="configs/demo__config.toml", help="Path to config file or directory containing .toml config files relative to wd."}
 ]
 
 [tool.poe.tasks.build-frontend]
@@ -234,6 +245,10 @@ frontend = [
 megadetector = [
     "pytorchwildlife>=1.2.3",
     "torch>=2.6.0",
+]
+
+enrichment = [
+    "pandas>=2.0.0",
 ]
 
 
