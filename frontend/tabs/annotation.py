@@ -17,7 +17,7 @@ ANNOTATION_CONFIG = {
 
 def render_annotation_page():
     """Render evaluation results for a specific model."""
-    st.title("WIP: Annotation")
+    st.title("Annotation")
 
     if "image_dir" not in st.session_state or "annotation_config" not in st.session_state:
         render_config_picker()
