@@ -4,12 +4,13 @@ Data enrichment script to convert annotations to training format and add metadat
 
 This script:
 1. Reads annotations.json files from multiple directories
-2. Loads and joins metadata file on original_image_id (annotations) and image_id (metadata)
+2. Loads and joins metadata file on original_image_id (annotations) and image_id (metadata) (optional)
 3. Converts to the required Parquet format for training
 
 Usage:
     poe run-enrichment  # Uses demo data by default
     poe run-enrichment --annotation-dirs data/dir1 data/dir2 --metadata-file data/metadata.csv
+    poe run-enrichment --annotation-dirs data/dir1 data/dir2 --no-metadata  # Skip metadata joining
 """
 
 import json
@@ -172,6 +173,11 @@ def main():
         default="data/demo/enriched_data.parquet",
         help="Output path for the enriched parquet file (default: data/demo/enriched_data.parquet)",
     )
+    parser.add_argument(
+        "--no-metadata",
+        action="store_true",
+        help="Skip metadata joining and only convert annotations to training format",
+    )
 
     args = parser.parse_args()
 
@@ -186,10 +192,13 @@ def main():
     logger.info("Converting annotations to training format...")
     data = convert_annotations_to_dataframe(annotations)
 
-    # Add metadata
-    logger.info(f"Loading metadata from {args.metadata_file}...")
-    metadata = load_metadata(args.metadata_file)
-    data = add_metadata(data, metadata)
+    # Add metadata (unless --no-metadata flag is used)
+    if not args.no_metadata:
+        logger.info(f"Loading metadata from {args.metadata_file}...")
+        metadata = load_metadata(args.metadata_file)
+        data = add_metadata(data, metadata)
+    else:
+        logger.info("Skipping metadata joining (--no-metadata flag used)")
 
     # Save to parquet
     logger.info(f"Saving enriched data to {args.output_path}...")

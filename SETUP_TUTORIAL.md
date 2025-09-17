@@ -1,15 +1,16 @@
 # Wildlife Age-Sex Classification: Complete Setup Tutorial
 
-This tutorial walks you through the complete workflow for wildlife age-sex classification using camera trap images. Follow these 6 main steps to get from raw images to trained models.
+This tutorial walks you through the complete workflow for wildlife age-sex classification using camera trap images. Follow these 7 main steps to get from raw images to trained models.
 
-## 🎯 The 6-Step Workflow
+## 🎯 The 7-Step Workflow
 
 1. **Import Raw Images** - Organize your camera trap images
 2. **Run MegaDetector** - Detect wildlife and extract bounding boxes  
 3. **Annotate with Interface** - Label images using the web interface
-4. **Create Experiment Configs** - Set up configuration files for training
-5. **Run Experiments** - Train and evaluate models
-6. **Check Results** - Analyze performance and iterate
+4. **Convert to Training Format** - Use enrichment script to prepare data
+5. **Create Experiment Configs** - Set up configuration files for training
+6. **Run Experiments** - Train and evaluate models
+7. **Check Results** - Analyze performance and iterate
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
@@ -17,9 +18,10 @@ This tutorial walks you through the complete workflow for wildlife age-sex class
 - [Step 1: Import Raw Images](#step-1-import-raw-images)
 - [Step 2: Run MegaDetector](#step-2-run-megadetector)
 - [Step 3: Annotate with Interface](#step-3-annotate-with-interface)
-- [Step 4: Create Experiment Configs](#step-4-create-experiment-configs)
-- [Step 5: Run Experiments](#step-5-run-experiments)
-- [Step 6: Check Results](#step-6-check-results)
+- [Step 4: Convert to Training Format](#step-4-convert-to-training-format)
+- [Step 5: Create Experiment Configs](#step-5-create-experiment-configs)
+- [Step 6: Run Experiments](#step-6-run-experiments)
+- [Step 7: Check Results](#step-7-check-results)
 - [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
@@ -82,7 +84,23 @@ uv sync --group frontend    # For Streamlit web interface
 uv sync --group megadetector # For wildlife detection
 ```
 
-### Step 4: Create Required Directories
+### Step 4: Activate Virtual Environment
+
+**Important**: You need to activate the virtual environment every time you start a new terminal session.
+
+```bash
+# Activate the virtual environment
+source .venv/bin/activate  # On Linux/macOS
+# or
+.venv\Scripts\activate     # On Windows
+
+# Verify activation (you should see (.venv) in your prompt)
+which python  # Should point to .venv/bin/python
+```
+
+**Note**: When the virtual environment is active, you'll see `(.venv)` at the beginning of your terminal prompt. This indicates that Python commands will use the project's isolated environment.
+
+### Step 5: Create Required Directories
 
 ```bash
 # Create all necessary directories
@@ -103,7 +121,7 @@ wildlife-age-sex/
     └── sex/         # Sex classification models
 ```
 
-### Step 5: Verify Installation
+### Step 6: Verify Installation
 
 ```bash
 # Test that everything is working
@@ -119,6 +137,10 @@ uv run python -c "import wildlifeml; print('Package imported successfully')"
 Create a directory structure for your raw images **inside the data directory**:
 
 ```bash
+# Activate virtual environment (if not already active)
+source .venv/bin/activate  # On Linux/macOS
+# or .venv\Scripts\activate on Windows
+
 # Create directory for your dataset
 mkdir -p data/raw/my_dataset
 
@@ -176,6 +198,10 @@ poe run-megadetector --image-dir data/raw/my_dataset
 ### Launch the Web Interface
 
 ```bash
+# Activate virtual environment (if not already active)
+source .venv/bin/activate  # On Linux/macOS
+# or .venv\Scripts\activate on Windows
+
 # Start the annotation interface
 poe build-frontend
 ```
@@ -203,51 +229,52 @@ Open your browser to `http://localhost:8501`
 
 ### Understanding Annotation Files
 
-The annotation process creates several files in your dataset directory:
+The annotation process creates several files in your dataset directory. The following snippets are examples. You will have complete control over the classes and labels you assign.
 
 **1. `annotations.json`** - Main annotation file created by the web interface:
 ```json
 {
   "0__IMG_001": {
-    "bbox_id": "0__IMG_001",
-    "image_id": "IMG_001",
-    "image_path": "data/raw/my_dataset/IMG_001.JPG",
+    "image_id": "0__IMG_001",
+    "original_image_id": "IMG_001",
+    "image_path": "data/my_dataset/raw/IMG_001.JPG",
     "category": 0,
     "bbox": [0.1, 0.2, 0.3, 0.4],
     "confidence": 0.95,
+    "source_file": "raw/md_unlabeled.json",
     "sex": "male",
-    "age": "adult",
-    "metadata": 1
+    "age": "adult"
   },
   "1__IMG_001": {
-    "bbox_id": "1__IMG_001", 
-    "image_id": "IMG_001",
-    "image_path": "data/raw/my_dataset/IMG_001.JPG",
+    "image_id": "1__IMG_001", 
+    "original_image_id": "IMG_001",
+    "image_path": "data/my_dataset/raw/IMG_001.JPG",
     "category": 0,
     "bbox": [0.5, 0.6, 0.2, 0.3],
     "confidence": 0.87,
+    "source_file": "raw/md_unlabeled.json",
     "sex": "female",
-    "age": "juvenile",
-    "metadata": 1
+    "age": "juvenile"
   }
 }
 ```
+NOTE: When annotating, you will select a top level folder inside `data/` which will pull in all `md_unlabeled.json` files in any sub folders. The "source_file" key in the JSON output indicates the subfolder where the MegaDetector file associated with the image can be found.
 
 **2. `annotation_config.json`** - Configuration file defining available classes:
 ```json
 {
   "sex_classes": ["male", "female", "unknown"],
-  "age_classes": ["juvenile", "yearling", "adult", "unknown"],
-  "metadata_options": ["summer", "winter", "day", "night"]
+  "age_classes": ["juvenile", "yearling", "adult", "unknown"]
 }
 ```
+TIP: You can also label images for image-level metadata data at this time, e.g. is_not_alone_in_image: ["true", "false"]
 
 **Key Points:**
-- Each bounding box gets a unique `bbox_id` (format: `{index}__{image_id}`)
-- Multiple animals can be detected in the same image (different `bbox_id` values)
+- Each bounding box gets a unique `image_id` (format: `{index}__{original_image_id}`)
+- Multiple animals can be detected in the same image (different `image_id` values)
+- Once the preprocessing step is run each bounding box will be cropped and saved as a unique image
 - The `category` field from MegaDetector is preserved (0 = animal)
-- Your labels (`sex`, `age`) are added during annotation
-- `metadata` can be any additional information you want to track
+- Your labels (e.g.,`sex`, `age`) are added during annotation
 
 **Important**: The annotation interface will create these files automatically. You don't need to create them manually - just use the web interface to label your images and the files will be generated for you.
 
@@ -274,22 +301,6 @@ We make it hard to do this to maintain maximum consistency across sessions and c
 - Check that image file extensions match what's in the JSON
 - Ensure images are in supported formats (.jpg, .jpeg, .png, .JPG)
 
-### Convert Annotations to Training Format
-
-After annotation, you need to convert your JSON annotations to the Parquet format required for training. The project includes a demo script that shows how to do this:
-
-```bash
-# Run the data enrichment script to see the conversion process
-uv run data_enrichment.py
-```
-
-**Important Note**: The `data_enrichement.py` script is just an example. For your own data, you'll need to create a similar conversion script that:
-1. Reads your `annotations.json` file
-2. Combines it with the MegaDetector results
-3. Converts to the required Parquet format
-
-The demo script creates `data/raw/my_dataset/labeled_bbox_data.parquet` with the required schema.
-
 ### Understanding the Demo Data Structure
 
 The project includes demo data to help you understand the expected format:
@@ -307,9 +318,9 @@ The project includes demo data to help you understand the expected format:
     'image': 'data/demo/preprocessed_demo_data/IMG_001.jpg',
     'bbox': [0.1, 0.2, 0.3, 0.4],  # [x, y, width, height] normalized
     'confidence': 0.95,
-    'sex': 'male',
-    'age': 'adult', 
-    'metadata': 1
+    'ex_class': 'label_1',
+    'camera_id': "VF_014",
+    ...
 }
 ```
 
@@ -334,7 +345,55 @@ The project includes demo data to help you understand the expected format:
 
 ---
 
-## Step 4: Create Experiment Configs
+## Step 4: Convert to Training Format
+
+This step converts your annotated data into the format required for model training using the productionized enrichment script.
+
+### Convert Annotations to Training Format
+
+After annotation, you need to convert your JSON annotations to the Parquet format required for training. The project includes an enrichment script that handles this conversion, combines different annotation files, and can be used to add additional metadata:
+
+```bash
+# Activate virtual environment (if not already active)
+source .venv/bin/activate  # On Linux/macOS
+# or .venv\Scripts\activate on Windows
+
+# Run enrichment with demo data (default)
+poe run-enrichment
+
+# Run enrichment with your own data (with metadata)
+poe run-enrichment --annotation-dirs data/my_dataset/raw1 data/my_dataset/raw2 --metadata-file data/my_metadata.csv --output-path data/my_dataset/enriched_data.parquet
+
+# Run enrichment without metadata
+poe run-enrichment --annotation-dirs data/my_dataset/raw1 data/my_dataset/raw2 --output-path data/my_dataset/enriched_data.parquet --no-metadata
+```
+
+**What the enrichment script does:**
+1. **Loads annotations** from one or more directories containing `annotations.json` files
+2. **Joins metadata** (optional) from CSV or Parquet files by matching `original_image_id` (annotations) with `image_id` (metadata) - use `--no-metadata` to skip this step
+3. **Converts to training format** with the required schema for model training
+4. **Saves as Parquet** for efficient loading during training
+
+**Metadata File Format:**
+Your metadata file should be a CSV or Parquet with an `image_id` column that matches the `original_image_id` from your annotations:
+
+```csv
+image_id,camera_id,location,date,weather,temperature
+VF_014_Session_4_20210902_I_00110a,VF_014,North_Field,2021-09-02,Sunny,15.5
+VF_014_Session_4_20210902_I_00110b,VF_014,North_Field,2021-09-02,Sunny,15.5
+```
+
+**Command Options:**
+- `--annotation-dirs` (`-a`): List of directories containing `annotations.json` files
+- `--metadata-file` (`-m`): Optional metadata file (CSV or Parquet) to join
+- `--output-path` (`-o`): Output path for the enriched Parquet file
+- `--no-metadata`: Skip metadata joining and only convert annotations to training format
+
+The script creates an enriched dataset ready for training with all your annotations and any additional metadata you provide (if not using `--no-metadata`).
+
+---
+
+## Step 5: Create Experiment Configs
 
 ### Copy and Modify Configuration Template
 
@@ -347,16 +406,24 @@ Edit your config file (e.g., `configs/example__config.toml`) and set the followi
 
 ---
 
-## Step 5: Run Experiments
+## Step 6: Run Experiments
 
 ### Run one experiment at a time
 ```bash
+# Activate virtual environment (if not already active)
+source .venv/bin/activate  # On Linux/macOS
+# or .venv\Scripts\activate on Windows
+
 # Run all age experiments
 poe run-pipeline --config configs/new/my_experiment__config.toml
 ```
 
 ### Run preprocessing and then a batch of experiments
 ```bash
+# Activate virtual environment (if not already active)
+source .venv/bin/activate  # On Linux/macOS
+# or .venv\Scripts\activate on Windows
+
 # All experiments in this setup should read from the same preprocessed data path
 poe preprocess -c configs/new/my_experiment__config.toml
 poe run-experiment -c configs/new
@@ -385,11 +452,15 @@ poe run-experiment -c configs/new
 
 ---
 
-## Step 6: Check Results
+## Step 7: Check Results
 
 ### View Results in Web Interface
 
 ```bash
+# Activate virtual environment (if not already active)
+source .venv/bin/activate  # On Linux/macOS
+# or .venv\Scripts\activate on Windows
+
 # Launch the interface
 poe build-frontend
 ```
@@ -448,7 +519,21 @@ Based on results, you can:
 
 ### Common Issues and Solutions
 
-**1. CUDA/GPU Issues:**
+**1. Virtual Environment Issues:**
+```bash
+# If you get "command not found" errors, make sure venv is activated
+source .venv/bin/activate  # On Linux/macOS
+# or .venv\Scripts\activate on Windows
+
+# Check if venv is active (should show (.venv) in prompt)
+echo $VIRTUAL_ENV  # Should show path to .venv directory
+
+# If venv doesn't exist, recreate it
+rm -rf .venv
+uv sync
+```
+
+**2. CUDA/GPU Issues:**
 ```bash
 # Check CUDA availability
 uv run python -c "import torch; print(torch.cuda.is_available())"
@@ -457,7 +542,7 @@ uv run python -c "import torch; print(torch.cuda.is_available())"
 device = "cpu"
 ```
 
-**2. Memory Issues:**
+**3. Memory Issues:**
 ```bash
 # Reduce batch size in config
 batch_size = 16  # or smaller
@@ -466,26 +551,26 @@ batch_size = 16  # or smaller
 rescale_to = [128, 128]
 ```
 
-**3. Dependency Conflicts:**
+**4. Dependency Conflicts:**
 ```bash
 # Clean and reinstall
 rm -rf .venv
 uv sync --reinstall
 ```
 
-**4. Configuration Errors:**
+**5. Configuration Errors:**
 ```bash
 # Validate TOML syntax
 uv run python -c "import tomli; tomli.load(open('configs/my_config.toml', 'rb'))"
 ```
 
-**5. Data Loading Issues:**
+**6. Data Loading Issues:**
 ```bash
 # Check data format
 uv run python -c "import pandas as pd; df = pd.read_parquet('data/your_data.parquet'); print(df.columns.tolist())"
 ```
 
-**6. Annotation Interface Issues:**
+**7. Annotation Interface Issues:**
 - **Interface won't start**: Check that port 8501 is available, try `poe build-frontend` again
 - **Can't see images**: Verify image paths in `md_unlabeled.json` match actual file locations
 - **Annotations not saving**: Check file permissions, ensure you're not editing JSON files while interface is running
@@ -494,12 +579,10 @@ uv run python -c "import pandas as pd; df = pd.read_parquet('data/your_data.parq
 
 **For Large Datasets:**
 - Use GPU training (`device = "cuda"`)
-- Increase `num_workers` for data loading
 - Use smaller image sizes for faster processing
 - Consider data sampling for initial experiments
 
 **For Better Accuracy:**
-- Use larger image sizes (`rescale_to = [384, 384]`)
 - Increase training epochs
 - Use stronger data augmentation
 - Try different backbone models (`densenet161`, `densenet201`)
@@ -523,4 +606,4 @@ After successful setup:
 
 ---
 
-**Congratulations!** You now have a fully functional wildlife age-sex classification pipeline. The system is designed to be flexible and scalable, allowing you to experiment with different models, data, and configurations to achieve the best results for your specific use case.
+**Congratulations!** You now have a fully functional classification pipeline. The system is designed to be flexible and scalable, allowing you to experiment with different models, data, and configurations to achieve the best results for your specific use case.

@@ -54,12 +54,14 @@ args = [
 [tool.poe.tasks.run-enrichment]
 shell = """
     uv sync --group enrichment
-    uv run scripts/enrichment.py --annotation-dirs $ANNOTATION_DIRS --metadata-file $METADATA_FILE --output-path $OUTPUT_PATH
+    uv run scripts/enrichment.py --annotation-dirs $ANNOTATION_DIRS --metadata-file $METADATA_FILE --output-path $OUTPUT_PATH $NO_METADATA
 """
 args = [
     {name="ANNOTATION_DIRS", options=["--annotation-dirs", "-a"], help="List of directories containing annotations.json files", nargs="+", default=["data/demo"]},
     {name="METADATA_FILE", options=["--metadata-file", "-m"], help="Metadata file (CSV or Parquet) to join with annotations", default="data/demo/sample_metadata.csv"},
-    {name="OUTPUT_PATH", options=["--output-path", "-o"], help="Output path for the enriched parquet file", default="data/demo/enriched_data.parquet"}
+    {name="OUTPUT_PATH", options=["--output-path", "-o"], help="Output path for the enriched parquet file", default="data/demo/enriched_data.parquet"},
+    # Added trailing comma and changed comment style to TOML-compatible
+    {name = "NO_METADATA", options = ["--no-metadata"], help = "Skip metadata joining and only convert annotations to training format", flag = true},
 ]
 
 # Individual script commands

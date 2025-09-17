@@ -2,22 +2,25 @@
 
 A machine learning pipeline for classifying wildlife by age and sex characteristics using camera trap images. This project provides a complete end-to-end solution for wildlife researchers and conservationists to automatically analyze camera trap data.
 
-## 🎯 The 6-Step Workflow
+## 🎯 The 7-Step Workflow
 
 1. **Import Raw Images** - Organize your camera trap images
 2. **Run MegaDetector** - Detect wildlife and extract bounding boxes  
 3. **Annotate with Interface** - Label images using the web interface
-4. **Create Experiment Configs** - Set up configuration files for training
-5. **Run Experiments** - Train and evaluate models
-6. **Check Results** - Analyze performance and iterate
+4. **Convert to Training Format** - Use enrichment script to prepare data
+5. **Create Experiment Configs** - Set up configuration files for training
+6. **Run Experiments** - Train and evaluate models
+7. **Check Results** - Analyze performance and iterate
 
 ## 🎯 Overview
 
-This project uses deep learning to automatically classify wildlife images based on:
+This project is designed as a flexible tool for running machine learning experiments on camera trap image data. It provides an end-to-end pipeline for data preprocessing, model training, and evaluation, with a focus on ease of experimentation and extensibility.
+
+As a proof of concept, we implemented age and sex classification for wildlife images, using deep learning models to predict:
 - **Sex**: Male, Female, Unknown
 - **Age**: Juvenile, Yearling, Adult, Unknown
 
-The pipeline integrates with **MegaDetector** for wildlife detection and provides a user-friendly web interface for data annotation and model evaluation.
+The pipeline integrates with **MegaDetector** for automated wildlife detection and offers a web interface for data annotation and model evaluation.
 
 ## ✨ Key Features
 
@@ -49,15 +52,28 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```bash
 git clone <repository-url>
 cd wildlife-age-sex
+
+# Create virtual environment and install dependencies
 uv sync
 ```
 
-3. **Run demo pipeline**:
+3. **Activate virtual environment** (required for each new session):
+```bash
+# Activate the virtual environment
+source .venv/bin/activate  # On Linux/macOS
+# or
+.venv\Scripts\activate     # On Windows
+
+# Verify activation (you should see (.venv) in your prompt)
+which python  # Should point to .venv/bin/python
+```
+
+4. **Run demo pipeline**:
 ```bash
 poe run-pipeline --config configs/demo__config.toml
 ```
 
-4. **Launch web interface**:
+5. **Launch web interface**:
 ```bash
 poe build-frontend
 # Open http://localhost:8501 in your browser
@@ -68,25 +84,33 @@ poe build-frontend
 Here's how to process your own camera trap images:
 
 ```bash
+# Activate virtual environment (if not already active)
+source .venv/bin/activate  # On Linux/macOS
+# or .venv\Scripts\activate on Windows
+
 # 1. Make new directory and import raw images
-mkdir -p data/raw/my_dataset
-cp /path/to/your/images/* data/raw/my_dataset/
+# You can also do this by dragging and doping in your code editor
+mkdir -p data/my_dataset/raw
+cp /path/to/your/images/* data/my_dataset/raw/
 
 # 2. Run MegaDetector
-poe run-megadetector --image-dir data/raw/my_dataset
+poe run-megadetector --image-dir data/my_dataset/raw/
 
 # 3. Annotate with interface
 poe build-frontend
 # Open http://localhost:8501 → Annotation tab → Label your images
 
-# 4. Create experiment config based on the demo
+# 4. Convert annotations to training format
+poe run-enrichment --annotation-dirs data/my_dataset/raw --output-path data/my_dataset/enriched_data.parquet
+
+# 5. Create experiment config based on the demo
 cp configs/demo__config.toml configs/my_experiment__config.toml
 # Edit the config file with your paths and settings
 
-# 5. Run experiments
+# 6. Run experiments
 poe run-pipeline --config configs/my_experiment__config.toml
 
-# 6. Check results
+# 7. Check results
 # Open http://localhost:8501 → Results tab → View performance metrics
 ```
 
@@ -95,41 +119,43 @@ poe run-pipeline --config configs/my_experiment__config.toml
 ```
 wildlife-age-sex/
 ├── configs/                 # Configuration files
-│   ├── age/                # Age classification experiments
-│   ├── sex/                # Sex classification experiments
-│   └── demo__config.toml   # Demo configuration
-├── data/                   # Data storage
-│   ├── raw/               # Raw camera trap images
-│   ├── preprocessed/      # Processed and cropped images
-│   ├── demo/              # Demo dataset
-│   └── splits/            # Train/test splits
-├── models/                # Trained models
-│   ├── age/               # Age classification models
-│   └── sex/               # Sex classification models
-├── scripts/               # Main pipeline scripts
-│   ├── preprocess.py      # Data preprocessing
-│   ├── train.py           # Model training
-│   ├── evaluate.py        # Model evaluation
-│   └── megadetector.py    # Wildlife detection
-├── frontend/              # Web interface
-│   ├── app.py             # Streamlit main app
-│   └── tabs/              # Interface tabs
-├── wildlifeml/            # Core package
-│   ├── io/                # Data I/O utilities
-│   ├── preprocess/        # Data preprocessing
-│   └── train/             # Training and evaluation
-└── pyproject.toml         # Project configuration
+│   ├── age/                 # Age classification experiments
+│   ├── sex/                 # Sex classification experiments
+│   └── demo__config.toml    # Demo configuration
+├── data/                    # Data storage
+│   ├── demo/                # Demo dataset
+│   └── preprocessed/        # Data used for the age/sex classification is not tracked in Github due to high volume
+├── models/                  # Trained models
+│   ├── age/                 # Age classification models
+│   ├── sex/                 # Sex classification models
+│   ├── demo_model/          # Demo model
+│   └── tensorflow_archive/  # Archive of models trained using legacy Tensorflow pipeline
+├── scripts/                 # Main pipeline scripts
+│   ├── enrichment.py        # Join annotation files and add metadata
+│   ├── megadetector.py      # Bounding box detection with MegaDetector
+│   ├── preprocess.py        # Data preprocessing
+│   ├── train.py             # Model training
+│   └── evaluate.py          # Model evaluation
+├── frontend/                # Web interface
+│   ├── app.py               # Streamlit main app
+│   └── tabs/                # Interface tabs
+├── wildlifeml/              # Core package
+│   ├── io/                  # Data I/O utilities
+│   ├── preprocess/          # Data preprocessing
+│   └── train/               # Training and evaluation
+├──  pyproject.toml          # Project configuration
+└──  SETUP_TUTORIAL.md       # Detialed tutorial
 ```
 
 ## 🔧 Usage
 
 ### Configuration
 
-Create a configuration file (see `configs/example_complete__config.toml` for all options):
+Create a configuration file (see `configs/example__config.toml` for all options):
 
 ```toml
 [globals]
-target_column = "sex"  # or "age"
+target_column = "sex" # or "age"
 classes = ["male", "female", "unknown"]
 
 [io.data]
@@ -179,6 +205,17 @@ Or you can use the abbreviated command flag for `--image-dir`: `-i`
 ```bash
 poe run-megadetector -i /path/to/images
 ```
+
+**Data Enrichment** (convert annotations to training format):
+```bash
+# Basic enrichment (demo data)
+poe run-enrichment
+
+# Custom enrichment with metadata
+poe run-enrichment --annotation-dirs data/dir1 data/dir2 --metadata-file data/metadata.csv --output-path data/enriched.parquet
+```
+Or use abbreviated flags: `-a` for `--annotation-dirs`, `-m` for `--metadata-file`, `-o` for `--output-path`
+To run without metadata, add the `--no-metadata` flag to the end of your command. This will override the `--metadata-file` flag.
 
 **Web Interface**:
 ```bash

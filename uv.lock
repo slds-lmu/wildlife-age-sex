@@ -3653,6 +3653,9 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+enrichment = [
+    { name = "pandas" },
+]
 frontend = [
     { name = "matplotlib" },
     { name = "opencv-python" },
@@ -3690,6 +3693,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+enrichment = [{ name = "pandas", specifier = ">=2.0.0" }]
 frontend = [
     { name = "matplotlib" },
     { name = "opencv-python", specifier = ">=4.11.0.86" },
