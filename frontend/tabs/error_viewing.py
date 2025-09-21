@@ -34,8 +34,9 @@ def render_error_viewing_page():
     if "experiment_name" in st.session_state:
         st.write(f"Experiment: {st.session_state.experiment_name}")
 
-        # Render results summary (no additional metrics needed for errors)
-        render_results_summary(st.session_state.experiment_name)
+        # Render results summary (no additional metrics needed for errors) - collapsed by default
+        with st.expander("Evaluation Results Summary", expanded=False):
+            render_results_summary(st.session_state.experiment_name)
 
         # Render error images slideshow
         render_image_slideshow(

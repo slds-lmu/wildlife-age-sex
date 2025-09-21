@@ -36,11 +36,12 @@ def render_uncertainty_viewing_page():
     if "experiment_name" in st.session_state:
         st.write(f"Experiment: {st.session_state.experiment_name}")
 
-        # Render results summary with uncertainty-specific metrics
-        render_results_summary(
-            st.session_state.experiment_name,
-            additional_metrics=["n_uncertain_images", "avg_confidence"],
-        )
+        # Render results summary with uncertainty-specific metrics - collapsed by default
+        with st.expander("Evaluation Results Summary", expanded=False):
+            render_results_summary(
+                st.session_state.experiment_name,
+                additional_metrics=["n_uncertain_images", "avg_confidence"],
+            )
 
         # Render uncertain images slideshow
         render_image_slideshow(
