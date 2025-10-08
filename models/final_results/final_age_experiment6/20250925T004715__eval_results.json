@@ -1,0 +1,71 @@
+{
+    "overall": {
+        "target_column": "age",
+        "n_test_observations": 68,
+        "class_distribution": {
+            "adult": 64,
+            "yearling": 3,
+            "juvenile": 1
+        },
+        "precision": 0.8858131487889274,
+        "recall": 0.9411764705882353,
+        "f1-score": 0.912655971479501,
+        "accuracy": 0.9411764705882353,
+        "confusion_matrix": {
+            "yearling_yearling": 0,
+            "yearling_juvenile": 0,
+            "yearling_adult": 3,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 0,
+            "juvenile_adult": 1,
+            "adult_yearling": 0,
+            "adult_juvenile": 0,
+            "adult_adult": 64
+        },
+        "uncertainty_threshold": 0.75,
+        "excluded_uncertain_images": true,
+        "n_uncertain_images": 82,
+        "n_certain_images": 68,
+        "avg_confidence": 0.8324702382087708
+    },
+    "is_summer: False": {
+        "target_column": "age",
+        "n_test_observations": 42,
+        "class_distribution": {
+            "adult": 38,
+            "yearling": 3,
+            "juvenile": 1
+        },
+        "precision": 0.81859410430839,
+        "recall": 0.9047619047619048,
+        "f1-score": 0.8595238095238096,
+        "accuracy": 0.9047619047619048,
+        "confusion_matrix": {
+            "yearling_yearling": 0,
+            "yearling_juvenile": 0,
+            "yearling_adult": 3,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 0,
+            "juvenile_adult": 1,
+            "adult_yearling": 0,
+            "adult_juvenile": 0,
+            "adult_adult": 38
+        },
+        "avg_confidence": 0.8362618684768677
+    },
+    "is_summer: True": {
+        "target_column": "age",
+        "n_test_observations": 26,
+        "class_distribution": {
+            "adult": 26
+        },
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "accuracy": 1.0,
+        "confusion_matrix": {
+            "yearling_yearling": 26
+        },
+        "avg_confidence": 0.8263454437255859
+    }
+}

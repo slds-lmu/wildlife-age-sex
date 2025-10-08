@@ -1,0 +1,81 @@
+{
+    "overall": {
+        "target_column": "sex",
+        "n_test_observations": 108,
+        "class_distribution": {
+            "female": 66,
+            "male": 35,
+            "unknown": 7
+        },
+        "precision": 0.9131944444444444,
+        "recall": 0.9074074074074074,
+        "f1-score": 0.8960905349794238,
+        "accuracy": 0.9074074074074074,
+        "confusion_matrix": {
+            "male_male": 35,
+            "male_female": 0,
+            "male_unknown": 0,
+            "female_male": 5,
+            "female_female": 61,
+            "female_unknown": 0,
+            "unknown_male": 0,
+            "unknown_female": 5,
+            "unknown_unknown": 2
+        },
+        "uncertainty_threshold": 0.75,
+        "excluded_uncertain_images": true,
+        "n_uncertain_images": 42,
+        "n_certain_images": 108,
+        "avg_confidence": 0.9087692499160767
+    },
+    "is_summer: True": {
+        "target_column": "sex",
+        "n_test_observations": 54,
+        "class_distribution": {
+            "female": 30,
+            "male": 20,
+            "unknown": 4
+        },
+        "precision": 0.9652777777777778,
+        "recall": 0.9629629629629629,
+        "f1-score": 0.9573874950219036,
+        "accuracy": 0.9629629629629629,
+        "confusion_matrix": {
+            "male_male": 20,
+            "male_female": 0,
+            "male_unknown": 0,
+            "female_male": 0,
+            "female_female": 30,
+            "female_unknown": 0,
+            "unknown_male": 0,
+            "unknown_female": 2,
+            "unknown_unknown": 2
+        },
+        "avg_confidence": 0.9103299379348755
+    },
+    "is_summer: False": {
+        "target_column": "sex",
+        "n_test_observations": 54,
+        "class_distribution": {
+            "female": 36,
+            "male": 15,
+            "unknown": 3
+        },
+        "precision": 0.8161764705882353,
+        "recall": 0.8518518518518519,
+        "f1-score": 0.8285714285714285,
+        "accuracy": 0.8518518518518519,
+        "confusion_matrix": {
+            "male_male": 15,
+            "male_female": 0,
+            "male_unknown": 0,
+            "female_male": 5,
+            "female_female": 31,
+            "female_unknown": 0,
+            "unknown_male": 0,
+            "unknown_female": 3,
+            "unknown_unknown": 0
+        },
+        "avg_confidence": 0.9072086215019226
+    }
+}

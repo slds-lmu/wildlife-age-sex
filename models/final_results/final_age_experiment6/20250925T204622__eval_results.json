@@ -1,0 +1,91 @@
+{
+    "overall": {
+        "target_column": "age",
+        "n_test_observations": 82,
+        "class_distribution": {
+            "adult": 75,
+            "yearling": 3,
+            "unknown": 2,
+            "juvenile": 2
+        },
+        "precision": 0.8365556216537775,
+        "recall": 0.9146341463414634,
+        "f1-score": 0.8738542799440734,
+        "accuracy": 0.9146341463414634,
+        "confusion_matrix": {
+            "yearling_yearling": 0,
+            "yearling_juvenile": 0,
+            "yearling_adult": 3,
+            "yearling_unknown": 0,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 0,
+            "juvenile_adult": 2,
+            "juvenile_unknown": 0,
+            "adult_yearling": 0,
+            "adult_juvenile": 0,
+            "adult_adult": 75,
+            "adult_unknown": 0,
+            "unknown_yearling": 0,
+            "unknown_juvenile": 0,
+            "unknown_adult": 2,
+            "unknown_unknown": 0
+        },
+        "uncertainty_threshold": 0.75,
+        "excluded_uncertain_images": true,
+        "n_uncertain_images": 68,
+        "n_certain_images": 82,
+        "avg_confidence": 0.8445363640785217
+    },
+    "is_summer: False": {
+        "target_column": "age",
+        "n_test_observations": 51,
+        "class_distribution": {
+            "adult": 45,
+            "unknown": 2,
+            "yearling": 2,
+            "juvenile": 2
+        },
+        "precision": 0.7785467128027681,
+        "recall": 0.8823529411764706,
+        "f1-score": 0.8272058823529411,
+        "accuracy": 0.8823529411764706,
+        "confusion_matrix": {
+            "yearling_yearling": 0,
+            "yearling_juvenile": 0,
+            "yearling_adult": 2,
+            "yearling_unknown": 0,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 0,
+            "juvenile_adult": 2,
+            "juvenile_unknown": 0,
+            "adult_yearling": 0,
+            "adult_juvenile": 0,
+            "adult_adult": 45,
+            "adult_unknown": 0,
+            "unknown_yearling": 0,
+            "unknown_juvenile": 0,
+            "unknown_adult": 2,
+            "unknown_unknown": 0
+        },
+        "avg_confidence": 0.8323919177055359
+    },
+    "is_summer: True": {
+        "target_column": "age",
+        "n_test_observations": 31,
+        "class_distribution": {
+            "adult": 30,
+            "yearling": 1
+        },
+        "precision": 0.9365244536940687,
+        "recall": 0.967741935483871,
+        "f1-score": 0.9518773135906927,
+        "accuracy": 0.967741935483871,
+        "confusion_matrix": {
+            "yearling_yearling": 0,
+            "yearling_juvenile": 1,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 30
+        },
+        "avg_confidence": 0.8645161390304565
+    }
+}

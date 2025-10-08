@@ -1,0 +1,69 @@
+{
+    "overall": {
+        "target_column": "age",
+        "n_test_observations": 93,
+        "class_distribution": {
+            "adult": 87,
+            "juvenile": 3,
+            "unknown": 3
+        },
+        "precision": 0.8751300728407907,
+        "recall": 0.9354838709677419,
+        "f1-score": 0.9043010752688171,
+        "accuracy": 0.9354838709677419,
+        "confusion_matrix": {
+            "yearling_yearling": 0,
+            "yearling_juvenile": 3,
+            "yearling_adult": 0,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 87,
+            "juvenile_adult": 0,
+            "adult_yearling": 0,
+            "adult_juvenile": 3,
+            "adult_adult": 0
+        },
+        "uncertainty_threshold": 0.75,
+        "excluded_uncertain_images": true,
+        "n_uncertain_images": 57,
+        "n_certain_images": 93,
+        "avg_confidence": 0.8386062979698181
+    },
+    "is_summer: False": {
+        "target_column": "age",
+        "n_test_observations": 54,
+        "class_distribution": {
+            "adult": 51,
+            "juvenile": 3
+        },
+        "precision": 0.8919753086419753,
+        "recall": 0.9444444444444444,
+        "f1-score": 0.9174603174603175,
+        "accuracy": 0.9444444444444444,
+        "confusion_matrix": {
+            "yearling_yearling": 0,
+            "yearling_juvenile": 3,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 51
+        },
+        "avg_confidence": 0.8371716737747192
+    },
+    "is_summer: True": {
+        "target_column": "age",
+        "n_test_observations": 39,
+        "class_distribution": {
+            "adult": 36,
+            "unknown": 3
+        },
+        "precision": 0.8520710059171598,
+        "recall": 0.9230769230769231,
+        "f1-score": 0.8861538461538462,
+        "accuracy": 0.9230769230769231,
+        "confusion_matrix": {
+            "yearling_yearling": 36,
+            "yearling_juvenile": 0,
+            "juvenile_yearling": 3,
+            "juvenile_juvenile": 0
+        },
+        "avg_confidence": 0.8405928015708923
+    }
+}
