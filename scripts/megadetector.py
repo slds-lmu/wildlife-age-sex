@@ -21,8 +21,8 @@ def clean_image_filename(filename: str) -> str:
     return re.sub(r"\.(jpg|jpeg|png|JPG|JPEG|PNG)$", "", filename, flags=re.IGNORECASE)
 
 
-def main(image_dir: str):
-    results = DETECTION_MODEL.batch_image_detection(image_dir)
+def main(image_dir: Path):
+    results = DETECTION_MODEL.batch_image_detection(str(image_dir))
 
     processed_results = {}
     for result in results:
@@ -59,7 +59,7 @@ def main(image_dir: str):
                 "confidence": round(float(confidence), 3),
             }
     # Save results to a text file in the class directory
-    output_path = Path(image_dir) / "md_unlabeled.json"
+    output_path = image_dir / "md_unlabeled.json"
     with open(output_path, "w") as f:
         json.dump(processed_results, f, indent=4)
 
@@ -68,4 +68,4 @@ if __name__ == "__main__":
     args = argparse.ArgumentParser()
     args.add_argument("--image-dir", type=str, required=True, default="data/demo/raw")
     args = args.parse_args()
-    main(args.image_dir)
+    main(Path(args.image_dir))

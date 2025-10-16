@@ -12,12 +12,13 @@ import tomli
 
 from wildlifeml.io import load, save, load_model
 from wildlifeml.train import evaluate_model
+from wildlifeml.utils import pathify_args
 
 
 def main(
-    working_dir: str,
-    test_filepath: str,
-    model_dir: str,
+    working_dir: Path,
+    test_filepath: Path,
+    model_dir: Path,
     backbone_model: str,
     target_column: str,
     classes: list[str],
@@ -27,11 +28,11 @@ def main(
     **kwargs,
 ):
     # Load data
-    test_data = load(filepath=Path(working_dir) / Path(test_filepath))
+    test_data = load(filepath=working_dir / test_filepath)
 
     # Load model
     model = load_model(
-        backbone_model, len(classes), weights_path=Path(working_dir) / Path(model_dir) / "model.pt"
+        backbone_model, len(classes), weights_path=working_dir / model_dir / "model.pt"
     )
 
     # Evaluate model
@@ -49,17 +50,15 @@ def main(
     timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
     save(
         results,
-        filepath=Path(working_dir) / Path(model_dir) / f"{timestamp}__eval_results.json",
+        filepath=working_dir / model_dir / f"{timestamp}__eval_results.json",
     )
     save(
         errors,
-        filepath=Path(working_dir) / Path(model_dir) / f"{timestamp}__eval_errors.parquet",
+        filepath=working_dir / model_dir / f"{timestamp}__eval_errors.parquet",
     )
     save(
         uncertain_images,
-        filepath=Path(working_dir)
-        / Path(model_dir)
-        / f"{timestamp}__eval_uncertain_images.parquet",
+        filepath=working_dir / model_dir / f"{timestamp}__eval_uncertain_images.parquet",
     )
 
 
@@ -68,15 +67,18 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, default="configs/demo__config.toml")
     args = parser.parse_args()
 
-    with open(args.config, "rb") as f:
+    with open(Path(args.config), "rb") as f:
         args = tomli.load(f)
 
     logging.basicConfig(**args.get("logging", {}))
 
+    # Preprocess arguments to convert string paths to Path objects
+    processed_args = pathify_args(args)
+
     main(
-        **args["globals"],
-        **args["io"]["model"],
-        **args["io"]["data"],
-        backbone_model=args["train"]["backbone_model"],
-        **args["evaluate"],
+        **processed_args["globals"],
+        **processed_args["io"]["model"],
+        **processed_args["io"]["data"],
+        backbone_model=processed_args["train"]["backbone_model"],
+        **processed_args["evaluate"],
     )

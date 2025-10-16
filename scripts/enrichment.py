@@ -18,18 +18,19 @@ import pandas as pd
 from pathlib import Path
 import argparse
 import logging
+from wildlifeml.utils import pathify_args
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def load_annotations(annotation_dirs: list) -> list:
+def load_annotations(annotation_dirs: list[Path]) -> list:
     """Load annotations from multiple directories containing annotations.json files."""
     all_annotations = []
 
     for annotation_dir in annotation_dirs:
-        annotations_path = Path(annotation_dir) / "annotations.json"
+        annotations_path = annotation_dir / "annotations.json"
 
         if not annotations_path.exists():
             logger.warning(f"Annotations file not found: {annotations_path}")
@@ -53,20 +54,18 @@ def load_annotations(annotation_dirs: list) -> list:
     return all_annotations
 
 
-def load_metadata(metadata_path: str) -> pd.DataFrame:
+def load_metadata(metadata_path: Path) -> pd.DataFrame:
     """Load additional metadata file (CSV or Parquet)."""
-    metadata_file = Path(metadata_path)
-
-    if not metadata_file.exists():
+    if not metadata_path.exists():
         raise FileNotFoundError(f"Metadata file not found: {metadata_path}")
 
     # Support both CSV and Parquet metadata files
-    if metadata_file.suffix.lower() == ".csv":
-        metadata = pd.read_csv(metadata_file)
-    elif metadata_file.suffix.lower() == ".parquet":
-        metadata = pd.read_parquet(metadata_file)
+    if metadata_path.suffix.lower() == ".csv":
+        metadata = pd.read_csv(metadata_path)
+    elif metadata_path.suffix.lower() == ".parquet":
+        metadata = pd.read_parquet(metadata_path)
     else:
-        raise ValueError(f"Unsupported metadata file format: {metadata_file.suffix}")
+        raise ValueError(f"Unsupported metadata file format: {metadata_path.suffix}")
 
     logger.info(
         f"Loaded metadata with {len(metadata)} rows and columns: {metadata.columns.tolist()}"
@@ -140,12 +139,11 @@ def add_metadata(data: pd.DataFrame, metadata: pd.DataFrame) -> pd.DataFrame:
     return enriched_data
 
 
-def save_parquet(data: pd.DataFrame, output_path: str) -> None:
+def save_parquet(data: pd.DataFrame, output_path: Path) -> None:
     """Save DataFrame to Parquet format."""
-    output_file = Path(output_path)
-    output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    data.to_parquet(output_file, index=False)
+    data.to_parquet(output_path, index=False)
     logger.info(f"Saved {len(data)} rows to {output_path}")
 
 
@@ -181,9 +179,13 @@ def main():
 
     args = parser.parse_args()
 
+    # Preprocess arguments to convert string paths to Path objects
+    args = pathify_args(vars(args))
+
     # Load annotations from multiple directories
     logger.info("Loading annotations...")
-    annotations = load_annotations(args.annotation_dirs)
+    annotation_dirs = [Path(d) for d in args["annotation_dirs"]]
+    annotations = load_annotations(annotation_dirs)
 
     if not annotations:
         raise ValueError("No annotations found in the specified directories")
@@ -193,19 +195,19 @@ def main():
     data = convert_annotations_to_dataframe(annotations)
 
     # Add metadata (unless --no-metadata flag is used)
-    if not args.no_metadata:
-        logger.info(f"Loading metadata from {args.metadata_file}...")
-        metadata = load_metadata(args.metadata_file)
+    if not args["no_metadata"]:
+        logger.info(f"Loading metadata from {args['metadata_file']}...")
+        metadata = load_metadata(Path(args["metadata_file"]))
         data = add_metadata(data, metadata)
     else:
         logger.info("Skipping metadata joining (--no-metadata flag used)")
 
     # Save to parquet
-    logger.info(f"Saving enriched data to {args.output_path}...")
-    save_parquet(data, args.output_path)
+    logger.info(f"Saving enriched data to {args['output_path']}...")
+    save_parquet(data, Path(args["output_path"]))
 
     logger.info("Data enrichment completed successfully!")
-    logger.info(f"Output file: {args.output_path}")
+    logger.info(f"Output file: {args['output_path']}")
     logger.info(f"Total samples: {len(data)}")
     logger.info(f"Columns: {data.columns.tolist()}")
 

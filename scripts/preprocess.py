@@ -12,18 +12,19 @@ import tomli
 
 from wildlifeml.io import load, save
 from wildlifeml.preprocess import preprocess_data
+from wildlifeml.utils import pathify_args
 
 
 def main(
-    working_dir: str,
-    raw_data_filepath: str,
-    preprocessed_data_filepath: str,
+    working_dir: Path,
+    raw_data_filepath: Path,
+    preprocessed_data_filepath: Path,
     preprocess_kwargs: dict,
     **kwargs,
 ):
     # Load data
     logging.info(f"Loading data from {raw_data_filepath}...")
-    data = load(filepath=Path(working_dir) / Path(raw_data_filepath))
+    data = load(filepath=working_dir / raw_data_filepath)
     logging.info(f"Loaded {len(data)} rows of data.")
 
     # Preprocess data
@@ -31,7 +32,7 @@ def main(
     preprocessed_data = preprocess_data(data, **preprocess_kwargs)
     save(
         preprocessed_data,
-        filepath=Path(working_dir) / Path(preprocessed_data_filepath),
+        filepath=working_dir / preprocessed_data_filepath,
     )
 
 
@@ -40,12 +41,15 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, default="configs/demo__config.toml")
     args = parser.parse_args()
 
-    with open(args.config, "rb") as f:
+    with open(Path(args.config), "rb") as f:
         args = tomli.load(f)
     logging.basicConfig(**args.get("logging", {}))
 
+    # Preprocess arguments to convert string paths to Path objects
+    args = pathify_args(args)
+
     main(
-        args["globals"]["working_dir"],
+        **args["globals"],
         **args["io"]["data"],
         preprocess_kwargs=args.get("preprocess", {}),
     )
