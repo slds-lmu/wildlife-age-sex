@@ -101,8 +101,8 @@ def display_metrics(metrics_dict, title="Metrics", show_std=False):
                     f"""
                 <div style="text-align: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #f8f9fa;">
                     <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Accuracy</div>
-                    <div style="font-size: 18px; font-weight: bold; color: #262730;">{acc_data['mean']:.2%}</div>
-                    <div style="font-size: 12px; color: #666;">(±{acc_data['std']:.2%})</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #262730;">{acc_data["mean"]:.2%}</div>
+                    <div style="font-size: 12px; color: #666;">(±{acc_data["std"]:.2%})</div>
                 </div>
                 """,
                     unsafe_allow_html=True,
@@ -117,8 +117,8 @@ def display_metrics(metrics_dict, title="Metrics", show_std=False):
                     f"""
                 <div style="text-align: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #f8f9fa;">
                     <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Precision</div>
-                    <div style="font-size: 18px; font-weight: bold; color: #262730;">{prec_data['mean']:.2%}</div>
-                    <div style="font-size: 12px; color: #666;">(±{prec_data['std']:.2%})</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #262730;">{prec_data["mean"]:.2%}</div>
+                    <div style="font-size: 12px; color: #666;">(±{prec_data["std"]:.2%})</div>
                 </div>
                 """,
                     unsafe_allow_html=True,
@@ -133,8 +133,8 @@ def display_metrics(metrics_dict, title="Metrics", show_std=False):
                     f"""
                 <div style="text-align: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #f8f9fa;">
                     <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Recall</div>
-                    <div style="font-size: 18px; font-weight: bold; color: #262730;">{rec_data['mean']:.2%}</div>
-                    <div style="font-size: 12px; color: #666;">(±{rec_data['std']:.2%})</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #262730;">{rec_data["mean"]:.2%}</div>
+                    <div style="font-size: 12px; color: #666;">(±{rec_data["std"]:.2%})</div>
                 </div>
                 """,
                     unsafe_allow_html=True,
@@ -149,8 +149,8 @@ def display_metrics(metrics_dict, title="Metrics", show_std=False):
                     f"""
                 <div style="text-align: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #f8f9fa;">
                     <div style="font-size: 14px; color: #666; margin-bottom: 5px;">F1 Score</div>
-                    <div style="font-size: 18px; font-weight: bold; color: #262730;">{f1_data['mean']:.2%}</div>
-                    <div style="font-size: 12px; color: #666;">(±{f1_data['std']:.2%})</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #262730;">{f1_data["mean"]:.2%}</div>
+                    <div style="font-size: 12px; color: #666;">(±{f1_data["std"]:.2%})</div>
                 </div>
                 """,
                     unsafe_allow_html=True,
@@ -430,7 +430,9 @@ def render_averaged_results(results, model):
         st.write("#### Class Distribution")
         st.write(f"Test set contained {first_result['n_test_observations']} observations.")
         st.write(f"Excluded uncertain images: {first_result['excluded_uncertain_images']}")
-        #add chart of class distribution here 
+        st.info(
+            "💡 Traning class distribution varies. Use 'Individual Runs' view to see the class distribution for each run."
+        )
 
         # Display averaged uncertainty metrics
         display_uncertainty_metrics(overall_data, "Uncertainty Analysis", show_std=True)
