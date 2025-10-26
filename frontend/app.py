@@ -8,58 +8,76 @@ from tabs.uncertainty_viewing import render_uncertainty_viewing_page
 
 
 def home():
-    # Info page
-    st.title("🦌 WildlifeML: Machine Learning Framework")
+    # Page header
+    st.title("🦌 WildlifeML")
+    st.caption("A Lightweight and Accessible Machine Learning Pipeline for Ecologists")
 
-    st.markdown("""
-    ## Welcome to WildlifeML
+    st.markdown("---")
 
-    This is a flexible machine learning framework for image classification tasks. The system
-    can be adapted for various image classification applications.
-    """)
+    st.header("Welcome to the WildlifeML App!")
+    st.markdown(
+        """
+**WildlifeML** is a lightweight interface for ecological image classification tasks.
+It's adaptable for many applications and based on an open framework described in our paper:
 
-    st.markdown("""
-    ### Key Features:
+> *Beyond Off-the-Shelf Models: A Lightweight and Accessible Machine Learning Pipeline for Ecologists Working with Image Data*
 
-    • **Configurable Models**: Choose from ResNet, VGG, DenseNet architectures
-    • **Flexible Data Pipeline**: Works with different image datasets and formats
-    • **Customizable Evaluation**: Adjust metrics and analysis methods
-    • **Extensible Design**: Easy to modify for new classification tasks
-    """)
+[View the paper on Arxiv](https://arxiv.org/demo-link)
+        """
+    )
 
-    st.markdown("""
-    ### 📋 Interface Sections:
-    """)
+    st.markdown("---")
+    st.header("📋 Interface Sections")
+    st.markdown("Explore the main components:")
 
-    st.write("### 🏷️ Annotation Interface")
-    st.write("• Manually label images with custom classification categories")
-    st.write("• Navigate through detected objects efficiently")
-    st.write("• Create custom annotation classes")
+    # Use columns to visually organize app features
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("🏷️ Annotation Interface")
+        st.markdown(
+            """
+- **Manually label images** with your own classes
+- **Navigate detected objects** efficiently
+            """
+        )
 
-    st.write("### 📊 Model Results")
-    st.write("• View comprehensive performance metrics for trained models")
-    st.write("• Compare model accuracy, precision, recall, and F1 scores")
-    st.write("• Review training specifications and class distributions")
+        st.subheader("❌ Error Viewing")
+        st.markdown(
+            """
+- **Examine misclassified images**
+- **See prediction errors with confidence scores**
+- **Find patterns in classification mistakes**
+            """
+        )
+    with col2:
+        st.subheader("📊 Model Results")
+        st.markdown(
+            """
+- **View interactive performance metrics**
+- **Compare accuracy, precision, recall, F1**
+- **Review training specs and class distributions**
+            """
+        )
 
-    st.write("### ❌ Error Viewing")
-    st.write("• Examine misclassified images to understand model weaknesses")
-    st.write("• Browse through prediction errors with confidence scores")
-    st.write("• Identify patterns in classification mistakes")
+        st.subheader("❓ Uncertainty Viewing")
+        st.markdown(
+            """
+- **Review images with uncertain predictions**
+- **Analyze confidence and threshold values**
+            """
+        )
 
-    st.write("### ❓ Uncertainty Viewing")
-    st.write("• Review images where the model is uncertain about predictions")
-    st.write("• Analyze confidence scores and uncertainty thresholds")
-
-    st.markdown("""
-    ### Getting Started:
-
-    Navigate through the sidebar to explore the current wildlife classification example.
-    The framework can be adapted for other image classification tasks by modifying
-    the configuration files and data pipeline.
-    """)
-
-    st.write(
-        "For more information, visit our [GitHub repository](https://github.com/slds-lmu/wildlife-age-sex)."
+    st.markdown("---")
+    st.header("🚀 Getting Started")
+    st.markdown(
+        """
+- **Use the sidebar menu** to navigate between annotation, results, error analysis, and uncertainties.
+- Adapt this framework for your own data by modifying config files and the pipeline in the linked repository as needed.
+        """
+    )
+    st.info(
+        "For more information, visit our [GitHub repository](https://github.com/slds-lmu/wildlife-age-sex).",
+        icon="🌐",
     )
 
 
