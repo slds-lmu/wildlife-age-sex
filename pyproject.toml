@@ -16,6 +16,7 @@ dependencies = [
     "ruff>=0.11.6",
     "scikit-learn>=1.6.1",
     "tomli>=2.2.1",
+    "uv>=0.9.5",
 ]
 
 [build-system]
@@ -220,16 +221,19 @@ args = [
 ]
 
 [tool.poe.tasks.build-frontend]
+env = { STREAMLIT_DISABLE_PROMPT = "1" }
 shell = """
-    uv sync --group frontend
-    uv run streamlit run frontend/app.py --server.address localhost --server.port 8501
+uv sync --group frontend
+python -m streamlit run frontend/app.py --server.address localhost --server.port 8501
 """
+
 
 [dependency-groups]
 pipeline = [
     "opencv-python>=4.11.0.86",
     "torch>=2.6.0",
     "torchvision>=0.21.0",
+    "uv>=0.9.5",
 ]
 
 frontend = [
@@ -242,15 +246,18 @@ frontend = [
     "torch>=2.6.0",
     "torchvision>=0.21.0",
     "opencv-python>=4.11.0.86",
+    "uv>=0.9.5",
 ]
 
 megadetector = [
     "pytorchwildlife>=1.2.3",
     "torch>=2.6.0",
+    "uv>=0.9.5",
 ]
 
 enrichment = [
     "pandas>=2.0.0",
+    "uv>=0.9.5",
 ]
 
 

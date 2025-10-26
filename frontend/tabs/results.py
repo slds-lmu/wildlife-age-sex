@@ -430,6 +430,7 @@ def render_averaged_results(results, model):
         st.write("#### Class Distribution")
         st.write(f"Test set contained {first_result['n_test_observations']} observations.")
         st.write(f"Excluded uncertain images: {first_result['excluded_uncertain_images']}")
+        #add chart of class distribution here 
 
         # Display averaged uncertainty metrics
         display_uncertainty_metrics(overall_data, "Uncertainty Analysis", show_std=True)

@@ -33,7 +33,7 @@ def convert_to_numeric_indices(
     numeric_labels = np.vectorize(category_to_idx.get)(targets)
     # One-hot encode using PyTorch
     labels = torch.nn.functional.one_hot(
-        torch.tensor(numeric_labels), num_classes=len(classes)
+        torch.tensor(numeric_labels, dtype=torch.long), num_classes=len(classes)
     ).numpy()
     return category_to_idx, labels
 

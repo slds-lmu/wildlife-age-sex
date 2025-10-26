@@ -78,7 +78,7 @@ cd /path/to/wildlife-age-sex
 # Create virtual environment and install base dependencies
 uv sync
 
-# Install additional dependency groups as needed
+# Install additional dependency groups as needed (automatically done for each preset command)
 uv sync --group pipeline    # For ML pipeline (PyTorch, OpenCV)
 uv sync --group frontend    # For Streamlit web interface
 uv sync --group megadetector # For wildlife detection
@@ -95,7 +95,7 @@ source .venv/bin/activate  # On Linux/macOS
 .venv\Scripts\activate     # On Windows
 
 # Verify activation (you should see (.venv) in your prompt)
-which python  # Should point to .venv/bin/python
+python --version  # Should point to .venv/bin/python
 ```
 
 **Note**: When the virtual environment is active, you'll see `(.venv)` at the beginning of your terminal prompt. This indicates that Python commands will use the project's isolated environment.
