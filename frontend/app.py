@@ -9,25 +9,35 @@ from tabs.uncertainty_viewing import render_uncertainty_viewing_page
 
 def home():
     # Info page
-    st.title("Welcome to the Wildlife Age-Sex Classification App")
-    st.write(
-        """This project helps classify wildlife based on age and sex using machine learning models.
-        This portal is designed to help annotate images of wildlife and compare the performance of
-        different trained models.
-        """
-    )
+    st.title("🦌 WildlifeML: Machine Learning Framework")
 
-    st.write("## App Sections")
+    st.markdown("""
+    ## Welcome to WildlifeML
+
+    This is a flexible machine learning framework for image classification tasks. The system
+    can be adapted for various image classification applications.
+    """)
+
+    st.markdown("""
+    ### Key Features:
+
+    • **Configurable Models**: Choose from ResNet, VGG, DenseNet architectures
+    • **Flexible Data Pipeline**: Works with different image datasets and formats
+    • **Customizable Evaluation**: Adjust metrics and analysis methods
+    • **Extensible Design**: Easy to modify for new classification tasks
+    """)
+
+    st.markdown("""
+    ### 📋 Interface Sections:
+    """)
 
     st.write("### 🏷️ Annotation Interface")
-    st.write("• Manually label wildlife images with age and sex classifications")
-    st.write("• Create custom annotation classes and labels for your dataset")
-    st.write("• Navigate through detected wildlife bounding boxes efficiently")
-    st.write("• Track annotation progress with visual indicators")
+    st.write("• Manually label images with custom classification categories")
+    st.write("• Navigate through detected objects efficiently")
+    st.write("• Create custom annotation classes")
 
     st.write("### 📊 Model Results")
     st.write("• View comprehensive performance metrics for trained models")
-    st.write("• Analyze confusion matrices and stratified results")
     st.write("• Compare model accuracy, precision, recall, and F1 scores")
     st.write("• Review training specifications and class distributions")
 
@@ -35,14 +45,19 @@ def home():
     st.write("• Examine misclassified images to understand model weaknesses")
     st.write("• Browse through prediction errors with confidence scores")
     st.write("• Identify patterns in classification mistakes")
-    st.write("• Use insights to improve model training and data quality")
 
     st.write("### ❓ Uncertainty Viewing")
     st.write("• Review images where the model is uncertain about predictions")
-    st.write("• Identify cases requiring manual verification or additional training data")
     st.write("• Analyze confidence scores and uncertainty thresholds")
 
-    st.write("Navigate through the sidebar to access different features of the app.")
+    st.markdown("""
+    ### Getting Started:
+
+    Navigate through the sidebar to explore the current wildlife classification example.
+    The framework can be adapted for other image classification tasks by modifying
+    the configuration files and data pipeline.
+    """)
+
     st.write(
         "For more information, visit our [GitHub repository](https://github.com/slds-lmu/wildlife-age-sex)."
     )
