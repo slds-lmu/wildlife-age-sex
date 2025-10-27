@@ -10,7 +10,7 @@ from .image_viewing import (
 def render_uncertainty_viewing_page():
     st.title("Uncertainty Viewing")
     st.write(
-        "Here you can view the uncertain images from each experiment that need manual labeling."
+        "Here you can view the images from each experiment where the model is not confident in its predictions."
     )
 
     st.write("## Select Experiment")
