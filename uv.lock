@@ -3681,7 +3681,10 @@ dependencies = [
 
 [package.dev-dependencies]
 enrichment = [
+    { name = "opencv-python" },
     { name = "pandas" },
+    { name = "torch" },
+    { name = "torchvision" },
     { name = "uv" },
 ]
 frontend = [
@@ -3726,7 +3729,10 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 enrichment = [
+    { name = "opencv-python", specifier = ">=4.11.0.86" },
     { name = "pandas", specifier = ">=2.0.0" },
+    { name = "torch", specifier = ">=2.7.1" },
+    { name = "torchvision", specifier = ">=0.22.1" },
     { name = "uv", specifier = ">=0.9.5" },
 ]
 frontend = [

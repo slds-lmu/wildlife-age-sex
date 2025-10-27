@@ -49,7 +49,7 @@ shell = """
     uv run scripts/megadetector.py --image-dir $IMAGE_DIR
 """
 args = [
-    {name="IMAGE_DIR", options=["--image-dir", "-i"], help="Path to image directory on which to run MegaDetector"}
+    {name="IMAGE_DIR", options=["--image-dir", "-i"], help="Path to image directory on which to run MegaDetector", default = "data/demo/raw/"}
 ]
 
 [tool.poe.tasks.run-enrichment]
@@ -58,11 +58,11 @@ shell = """
     uv run scripts/enrichment.py --annotation-dirs $ANNOTATION_DIRS --metadata-file $METADATA_FILE --output-path $OUTPUT_PATH $NO_METADATA
 """
 args = [
-    {name="ANNOTATION_DIRS", options=["--annotation-dirs", "-a"], help="List of directories containing annotations.json files", nargs="+", default=["data/demo"]},
+    {name="ANNOTATION_DIRS", options=["--annotation-dirs", "-a"], help="List of directories containing annotations.json files", default="data/demo", multiple=true},
     {name="METADATA_FILE", options=["--metadata-file", "-m"], help="Metadata file (CSV or Parquet) to join with annotations", default="data/demo/sample_metadata.csv"},
     {name="OUTPUT_PATH", options=["--output-path", "-o"], help="Output path for the enriched parquet file", default="data/demo/enriched_data.parquet"},
     # Added trailing comma and changed comment style to TOML-compatible
-    {name = "NO_METADATA", options = ["--no-metadata"], help = "Skip metadata joining and only convert annotations to training format", flag = true},
+    {name = "NO_METADATA", options = ["--no-metadata"], help = "Skip metadata joining and only convert annotations to training format", type="boolean"},
 ]
 
 # Individual script commands
@@ -216,7 +216,7 @@ args = [
 env = { STREAMLIT_DISABLE_PROMPT = "1" }
 shell = """
     uv sync --group frontend
-    python -m streamlit run frontend/app.py --server.address localhost --server.port 8501
+    python -m streamlit run frontend/app.py --server.address localhost --server.port 8501 --server.headless true
 """
 
 
@@ -248,7 +248,10 @@ megadetector = [
 ]
 
 enrichment = [
+    "opencv-python>=4.11.0.86",
     "pandas>=2.0.0",
+    "torch>=2.7.1",
+    "torchvision>=0.22.1",
     "uv>=0.9.5",
 ]
 
