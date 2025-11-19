@@ -1,14 +1,18 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import numpy as np
 import json
 import logging
-from pathlib import Path
-from sklearn.metrics import ConfusionMatrixDisplay
-import matplotlib.pyplot as plt
+from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import plotly.express as px
+import streamlit as st
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+    accuracy_score,
+    precision_recall_fscore_support,
+)
 
 
 def plot_confusion_matrix(cm_dict, labels=None):
@@ -214,10 +218,16 @@ def display_uncertainty_metrics(metrics_dict, title="Uncertainty Metrics", show_
         if show_std and isinstance(metrics_dict["avg_confidence"], dict):
             conf_data = metrics_dict["avg_confidence"]
             available_metrics.append(
-                ("Avg Confidence", f"{conf_data['mean']:.3f}", f"{conf_data['std']:.3f}")
+                (
+                    "Avg Prediction Confidence",
+                    f"{conf_data['mean']:.3f}",
+                    f"{conf_data['std']:.3f}",
+                )
             )
         else:
-            available_metrics.append(("Avg Confidence", f"{metrics_dict['avg_confidence']:.3f}"))
+            available_metrics.append(
+                ("Avg Prediction Confidence", f"{metrics_dict['avg_confidence']:.3f}")
+            )
     if not available_metrics:
         st.write("No uncertainty metrics available for this result.")
         return
@@ -257,64 +267,136 @@ def calculate_averaged_metrics(results):
     if not results:
         return None
 
-    # Collect all metrics across runs
-    all_metrics = {
-        "overall": {
-            "accuracy": [],
-            "precision": [],
-            "recall": [],
-            "f1-score": [],
-            "n_test_observations": [],
-            "excluded_uncertain_images": [],
-            "n_uncertain_images": [],
-            "avg_confidence": [],
+    metric_keys = ["accuracy", "precision", "recall", "f1-score"]
+    additional_numeric_keys = [
+        "n_test_observations",
+        "n_uncertain_images",
+        "n_certain_images",
+        "avg_confidence",
+    ]
+
+    # Store aggregated labels/predictions and per-run metric values per section.
+    sections = defaultdict(
+        lambda: {
+            "labels_known": set(),
+            "y_true": [],
+            "y_pred": [],
+            "per_run_metrics": defaultdict(list),
+            "numeric_values": defaultdict(list),
+            "boolean_values": defaultdict(list),
         }
-    }
+    )
 
-    # Collect stratified metrics
-    stratified_keys = set()
-    for _, result in results:
-        for key in result.keys():
-            if key != "overall":
-                stratified_keys.add(key)
+    def parse_confusion_key(key, known_labels):
+        """Parse a confusion-matrix key back into true/pred labels."""
+        for label in sorted(known_labels, key=len, reverse=True):
+            prefix = f"{label}_"
+            if key.startswith(prefix):
+                return label, key[len(prefix) :]
+        if "_" in key:
+            true_label, pred_label = key.split("_", 1)
+            return true_label, pred_label
+        return None
 
-    # Initialize stratified metrics collection
-    for key in stratified_keys:
-        all_metrics[key] = {
-            "accuracy": [],
-            "precision": [],
-            "recall": [],
-            "f1-score": [],
-            "n_test_observations": [],
-            "excluded_uncertain_images": [],
-            "n_uncertain_images": [],
-            "avg_confidence": [],
+    def expand_confusion_matrix(cm_dict, known_labels):
+        """Expand confusion-matrix counts into repeated label arrays for sklearn metrics."""
+        y_true, y_pred = [], []
+        for key, count in cm_dict.items():
+            if count <= 0:
+                continue
+            parsed = parse_confusion_key(key, known_labels)
+            if not parsed:
+                logging.warning(f"Skipping malformed confusion-matrix key: {key}")
+                continue
+            true_label, pred_label = parsed
+            y_true.extend([true_label] * count)
+            y_pred.extend([pred_label] * count)
+            known_labels.update([true_label, pred_label])
+        return y_true, y_pred
+
+    def compute_metrics(y_true, y_pred):
+        """Recompute weighted-averaged metrics using sklearn with zero_division safeguards."""
+        precision, recall, f1, _ = precision_recall_fscore_support(
+            y_true, y_pred, average="weighted", zero_division=0
+        )
+        accuracy = accuracy_score(y_true, y_pred)
+        return {
+            "precision": float(precision),
+            "recall": float(recall),
+            "f1-score": float(f1),
+            "accuracy": float(accuracy),
         }
 
-    # Collect metrics from each run
     for _, result in results:
-        # Overall metrics
-        if "overall" in result:
-            for metric in all_metrics["overall"].keys():
-                if metric in result["overall"]:
-                    all_metrics["overall"][metric].append(result["overall"][metric])
+        for section_name, section_data in result.items():
+            if "confusion_matrix" not in section_data:
+                continue
 
-        # Stratified metrics
-        for key in stratified_keys:
-            if key in result:
-                for metric in all_metrics[key].keys():
-                    if metric in result[key]:
-                        all_metrics[key][metric].append(result[key][metric])
+            section_store = sections[section_name]
+            section_store["labels_known"].update(section_data.get("class_distribution", {}).keys())
 
-    # Calculate averages and standard deviations
+            y_true_run, y_pred_run = expand_confusion_matrix(
+                section_data["confusion_matrix"], section_store["labels_known"]
+            )
+            if not y_true_run:
+                continue
+
+            section_store["y_true"].extend(y_true_run)
+            section_store["y_pred"].extend(y_pred_run)
+
+            run_metrics = compute_metrics(y_true_run, y_pred_run)
+            for key in metric_keys:
+                section_store["per_run_metrics"][key].append(run_metrics[key])
+
+            for key in additional_numeric_keys:
+                if key in section_data:
+                    section_store["numeric_values"][key].append(section_data[key])
+
+            if "excluded_uncertain_images" in section_data:
+                section_store["boolean_values"]["excluded_uncertain_images"].append(
+                    bool(section_data["excluded_uncertain_images"])
+                )
+
     averaged_metrics = {}
-    for section, metrics in all_metrics.items():
-        averaged_metrics[section] = {}
-        for metric, values in metrics.items():
-            if values:  # Only calculate if we have values
-                avg = np.mean(values)
-                std = np.std(values, ddof=1) if len(values) > 1 else 0.0
-                averaged_metrics[section][metric] = {"mean": avg, "std": std, "count": len(values)}
+    for section_name, section_store in sections.items():
+        if not section_store["y_true"]:
+            continue
+
+        averaged_metrics[section_name] = {}
+        combined_metrics = None
+        if section_name == "overall":
+            # We only aggregate via the combined confusion matrix for the overall summary.
+            combined_metrics = compute_metrics(section_store["y_true"], section_store["y_pred"])
+
+        for key in metric_keys:
+            per_run_values = section_store["per_run_metrics"][key]
+            if not per_run_values:
+                continue
+            mean = (
+                combined_metrics[key]
+                if combined_metrics is not None
+                else float(np.mean(per_run_values))
+            )
+            std = float(np.std(per_run_values, ddof=1)) if len(per_run_values) > 1 else 0.0
+            averaged_metrics[section_name][key] = {
+                "mean": mean,
+                "std": std,
+                "count": len(per_run_values),
+            }
+
+        for key, values in section_store["numeric_values"].items():
+            if not values:
+                continue
+            avg = float(np.mean(values))
+            std = float(np.std(values, ddof=1)) if len(values) > 1 else 0.0
+            averaged_metrics[section_name][key] = {"mean": avg, "std": std, "count": len(values)}
+
+        for key, values in section_store["boolean_values"].items():
+            if not values:
+                continue
+            avg = float(np.mean(values))
+            std = float(np.std(values, ddof=1)) if len(values) > 1 else 0.0
+            averaged_metrics[section_name][key] = {"mean": avg, "std": std, "count": len(values)}
 
     return averaged_metrics
 
@@ -425,13 +507,26 @@ def render_averaged_results(results, model):
     if "overall" in averaged_metrics:
         overall_data = averaged_metrics["overall"]
 
-        # Class distribution info (use first run as representative)
-        first_result = results[0][1]["overall"]
+        # Class distribution info (use averaged values)
         st.write("#### Class Distribution")
-        st.write(f"Test set contained {first_result['n_test_observations']} observations.")
+        if "n_test_observations" in overall_data:
+            n_obs_data = overall_data["n_test_observations"]
+            if isinstance(n_obs_data, dict) and "mean" in n_obs_data:
+                st.write(
+                    f"Test set contained {n_obs_data['mean']:.0f} ± {n_obs_data['std']:.0f} observations."
+                )
+            else:
+                st.write(f"Test set contained {n_obs_data} observations.")
+        else:
+            # Fallback to first run if averaged value not available
+            first_result = results[0][1]["overall"]
+            st.write(f"Test set contained {first_result['n_test_observations']} observations.")
+
+        # Excluded uncertain images (use first run as representative since it's boolean)
+        first_result = results[0][1]["overall"]
         st.write(f"Excluded uncertain images: {first_result['excluded_uncertain_images']}")
         st.info(
-            "💡 Traning class distribution varies. Use 'Individual Runs' view to see the class distribution for each run."
+            "💡 Traning class distribution varies. Use 'Individual Evaluation Runs' view to see the class distribution for each run."
         )
 
         # Display averaged uncertainty metrics
@@ -441,7 +536,7 @@ def render_averaged_results(results, model):
         display_metrics(overall_data, "Overall Performance", show_std=True)
         # Note about confusion matrix
         st.info(
-            "💡 **Note:** Confusion matrices are not averaged. Use 'Individual Runs' view to see confusion matrices for each evaluation run."
+            "💡 **Note:** Confusion matrices are not summarized. Use 'Individual Evaluation Runs' view to see confusion matrices for each run."
         )
 
         # Display stratified results (averaged)
@@ -466,7 +561,7 @@ def render_individual_results(results):
             )
             st.write(f"Number of uncertain images: {result['overall']['n_uncertain_images']}")
             st.write(
-                f"Avg confidence of included images: {result['overall']['avg_confidence']:.3f}"
+                f"Avg prediction confidence of included images: {result['overall']['avg_confidence']:.3f}"
             )
 
             class_dist = result["overall"]["class_distribution"]

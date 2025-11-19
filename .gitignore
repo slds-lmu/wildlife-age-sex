@@ -197,4 +197,5 @@ data/demo/train/
 models/**/*.jpg
 !models/demo_model/**/*.jpg
 !models/**/*.parquet
+analyses/*
 

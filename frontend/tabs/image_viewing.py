@@ -146,7 +146,7 @@ def render_results_summary(experiment_name, additional_metrics=None):
                         f"**Number of Uncertain Images:** {overall.get('n_uncertain_images', 'N/A')}"
                     )
                     st.write(
-                        f"**Avg Confidence of Included Images:** {overall.get('avg_confidence', 'N/A'):.3f}"
+                        f"**Avg Prediction Confidence of Included Images:** {overall.get('avg_confidence', 'N/A'):.3f}"
                     )
             except Exception as e:
                 st.error(f"Error loading evaluation results: {e}")
