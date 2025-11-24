@@ -30,7 +30,12 @@
         "recall": NaN,
         "f1-score": NaN,
         "accuracy": NaN,
-        "confusion_matrix": {},
+        "confusion_matrix": {
+            "label_2_label_1": 0,
+            "label_2_label_2": 0,
+            "label_1_label_2": 0,
+            "label_1_label_1": 0
+        },
         "avg_confidence": NaN
     }
 }

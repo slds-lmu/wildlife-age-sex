@@ -65,10 +65,15 @@
         "f1-score": 1.0,
         "accuracy": 1.0,
         "confusion_matrix": {
-            "male_male": 15,
-            "male_female": 0,
+            "female_female": 27,
+            "unknown_female": 0,
+            "male_unknown": 0,
+            "female_unknown": 0,
+            "unknown_unknown": 0,
+            "unknown_male": 0,
             "female_male": 0,
-            "female_female": 27
+            "male_male": 15,
+            "male_female": 0
         },
         "avg_confidence": 0.896223247051239
     }

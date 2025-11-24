@@ -49,9 +49,21 @@
         "accuracy": 0.9245283018867925,
         "confusion_matrix": {
             "yearling_yearling": 0,
-            "yearling_juvenile": 4,
+            "yearling_juvenile": 0,
+            "yearling_adult": 0,
+            "yearling_unknown": 0,
             "juvenile_yearling": 0,
-            "juvenile_juvenile": 49
+            "juvenile_juvenile": 0,
+            "juvenile_adult": 4,
+            "juvenile_unknown": 0,
+            "adult_yearling": 0,
+            "adult_juvenile": 0,
+            "adult_adult": 49,
+            "adult_unknown": 0,
+            "unknown_yearling": 0,
+            "unknown_juvenile": 0,
+            "unknown_adult": 0,
+            "unknown_unknown": 0
         },
         "avg_confidence": 0.8342781066894531
     },

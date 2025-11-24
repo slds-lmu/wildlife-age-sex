@@ -50,14 +50,21 @@
         "accuracy": 0.9259259259259259,
         "confusion_matrix": {
             "yearling_yearling": 6,
-            "yearling_juvenile": 2,
-            "yearling_adult": 0,
-            "juvenile_yearling": 1,
-            "juvenile_juvenile": 43,
+            "yearling_juvenile": 0,
+            "yearling_adult": 2,
+            "yearling_unknown": 0,
+            "juvenile_yearling": 0,
+            "juvenile_juvenile": 0,
             "juvenile_adult": 0,
-            "adult_yearling": 0,
-            "adult_juvenile": 1,
-            "adult_adult": 1
+            "juvenile_unknown": 0,
+            "adult_yearling": 1,
+            "adult_juvenile": 0,
+            "adult_adult": 43,
+            "adult_unknown": 0,
+            "unknown_yearling": 0,
+            "unknown_juvenile": 0,
+            "unknown_adult": 1,
+            "unknown_unknown": 1
         },
         "avg_confidence": 0.9578173160552979
     },
@@ -74,15 +81,22 @@
         "f1-score": 0.8134521664255089,
         "accuracy": 0.8441558441558441,
         "confusion_matrix": {
+            "adult_adult": 61,
+            "unknown_juvenile": 0,
+            "juvenile_juvenile": 3,
+            "juvenile_yearling": 1,
+            "yearling_adult": 6,
+            "juvenile_unknown": 0,
+            "unknown_unknown": 0,
+            "yearling_unknown": 0,
             "yearling_yearling": 1,
             "yearling_juvenile": 0,
-            "yearling_adult": 6,
-            "juvenile_yearling": 1,
-            "juvenile_juvenile": 3,
+            "unknown_yearling": 0,
             "juvenile_adult": 4,
-            "adult_yearling": 1,
+            "unknown_adult": 0,
             "adult_juvenile": 0,
-            "adult_adult": 61
+            "adult_yearling": 1,
+            "adult_unknown": 0
         },
         "avg_confidence": 0.9615520238876343
     }

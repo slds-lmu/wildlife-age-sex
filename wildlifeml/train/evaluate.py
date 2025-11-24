@@ -244,20 +244,25 @@ def _get_metrics(
     labels: np.ndarray, predictions: np.ndarray, idx_to_category: dict, target_column: str
 ) -> dict:
     """Helper function to calculate all evaluation metrics."""
-    # Convert confusion matrix to dict with original labels as keys
-    cm = confusion_matrix(labels, predictions)
-    logging.debug(f"Confusion matrix shape: {cm.shape}")
+    ordered_indices = sorted(idx_to_category.keys())
+    label_names = [idx_to_category[idx] for idx in ordered_indices]
 
-    # Convert confusion matrix to dict with original labels
+    cm_table = {
+        true_label: {pred_label: 0 for pred_label in label_names} for true_label in label_names
+    }
+    for true_idx, pred_idx in zip(labels, predictions):
+        true_label = idx_to_category[int(true_idx)]
+        pred_label = idx_to_category[int(pred_idx)]
+        cm_table[true_label][pred_label] += 1
+
     cm_dict = {
-        f"{idx_to_category[i]}_{idx_to_category[j]}": int(
-            cm[i, j]
-        )  # Convert to int for JSON serialization
-        for i in range(cm.shape[0])
-        for j in range(cm.shape[1])
+        f"{true_label}_{pred_label}": count
+        for true_label, pred_counts in cm_table.items()
+        for pred_label, count in pred_counts.items()
     }
 
-    class_distribution = pd.Series(labels).map(idx_to_category).value_counts().to_dict()
+    class_distribution_series = pd.Series(labels).map(idx_to_category).value_counts()
+    class_distribution = {label: int(count) for label, count in class_distribution_series.items()}
 
     metrics = {
         "target_column": target_column,
