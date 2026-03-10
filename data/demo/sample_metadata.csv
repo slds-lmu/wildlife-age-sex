@@ -1,0 +1,6 @@
+image_id,camera_id,location,date,weather,temperature
+VF_014_Session_4_20210902_I_00110a,VF_014,North_Field,2021-09-02,Sunny,15.5
+VF_014_Session_4_20210902_I_00110b,VF_014,North_Field,2021-09-02,Sunny,15.5
+VF_015_Session_1_20210212_I_00060a,VF_015,South_Field,2021-02-12,Cloudy,12.3
+VF_015_Session_1_20210212_I_00062a,VF_015,South_Field,2021-02-12,Cloudy,12.3
+VF_015_Session_1_20210212_I_00061a,VF_015,South_Field,2021-02-12,Cloudy,12.3

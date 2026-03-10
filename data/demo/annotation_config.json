@@ -1,0 +1,11 @@
+{
+  "classes": [
+    {
+      "class_name": "ex_class",
+      "class_labels": [
+        "label_1",
+        "label_2"
+      ]
+    }
+  ]
+}

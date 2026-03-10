@@ -59,6 +59,7 @@ def postprocess_image_data(data: pd.DataFrame, filepath: Path) -> pd.DataFrame:
     image_dir = filepath.parent / filepath.stem
     image_dir.mkdir(exist_ok=True)
 
+    # Create image paths by adding .jpg extension to image_id
     data.loc[:, "image_path"] = data.image_id.apply(lambda id: str(image_dir / (id + ".jpg")))
 
     for __, row in data.iterrows():

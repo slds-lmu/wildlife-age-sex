@@ -39,6 +39,7 @@ classes = ["male", "female", "unknown"]
 [preprocess] #OPTIONAL
 
 confidence_threshold = 0.96
+
 cropping_mode = "shift" 
 rescale_to = [224, 224]
 
@@ -61,3 +62,5 @@ finetune_layers = 3
 
 # Provide stratified evaluation on specified colunm, only supports stratification on one column
 stratify_by = "is_summer"
+confidence_threshold = 0.75
+exclude_uncertain = true
