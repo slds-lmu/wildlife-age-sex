@@ -4,10 +4,7 @@ services:
     runtime: python
     buildCommand: >-
       pip install uv &&
-      uv sync --group frontend &&
-      mkdir -p data &&
-      ln -sfn ../test_data/data__red_deer_cropped data/data__red_deer_cropped &&
-      ln -sfn ../test_data/data__red_deer_raw data/data__red_deer_raw
+      uv sync --group frontend
     startCommand: >-
       uv run streamlit run frontend/app.py
       --server.address=0.0.0.0
