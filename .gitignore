@@ -193,9 +193,16 @@ data/demo/train/
 *.parquet
 !data/demo/enriched_data.parquet
 !data/demo/preprocessed_demo_data.parquet
-# keep error tables from evaluation
+# Ignore test data (use data/demo/ instead)
+test_data/
+# Only keep demo_model results; ignore all other experiment dirs
+models/age/
+models/sex/
+models/final_results/
+models/tensorflow_archive/
+models/test_model/
 models/**/*.jpg
 !models/demo_model/**/*.jpg
-!models/**/*.parquet
+!models/demo_model/**/*.parquet
 analyses/*
 

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: wildlife-age-sex
+    runtime: python
+    buildCommand: >-
+      pip install uv &&
+      uv sync --group frontend
+    startCommand: >-
+      uv run streamlit run frontend/app.py
+      --server.address=0.0.0.0
+      --server.port=$PORT
+      --server.headless=true
+      --server.fileWatcherType=none
+    plan: free
