@@ -57,6 +57,18 @@ cd wildlife-age-sex
 uv sync
 ```
 
+> **Note — Git LFS for model weights.** Selected model weights in
+> `models/final_results/` and `models/demo_model/` are tracked with
+> [Git LFS](https://git-lfs.github.com/). Install it once before cloning so
+> the weights download automatically:
+> ```bash
+> git lfs install   # one-time per machine
+> git clone <repository-url>
+> ```
+> If you already cloned without LFS, run `git lfs pull` to fetch the weights.
+> All other experiment weights in `models/age/`, `models/sex/`, and
+> `models/tensorflow_archive/` are gitignored and not stored in the repo.
+
 3. **Activate virtual environment** (required for each new session):
 ```bash
 # Activate the virtual environment
@@ -126,10 +138,11 @@ wildlife-age-sex/
 │   ├── demo/                # Demo dataset
 │   └── preprocessed/        # Data used for the age/sex classification is not tracked in Github due to high volume
 ├── models/                  # Trained models
-│   ├── age/                 # Age classification models
-│   ├── sex/                 # Sex classification models
-│   ├── demo_model/          # Demo model
-│   └── tensorflow_archive/  # Archive of models trained using legacy Tensorflow pipeline
+│   ├── age/                 # Age classification models (gitignored, not in repo)
+│   ├── sex/                 # Sex classification models (gitignored, not in repo)
+│   ├── final_results/       # Best-performing age & sex models — tracked via Git LFS
+│   ├── demo_model/          # Demo model — tracked via Git LFS
+│   └── tensorflow_archive/  # Archive of legacy Tensorflow models (gitignored, not in repo)
 ├── scripts/                 # Main pipeline scripts
 │   ├── enrichment.py        # Join annotation files and add metadata
 │   ├── megadetector.py      # Bounding box detection with MegaDetector
