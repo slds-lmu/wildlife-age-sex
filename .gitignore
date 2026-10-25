@@ -182,6 +182,9 @@ cython_debug/
 *.keras
 *.pt
 *.pth
+# Tracked via Git LFS (see .gitattributes)
+!models/final_results/**/model.pt
+!models/demo_model/model.pt
 # NOTE: do not use the depreciated SavedModel format
 # (https://www.tensorflow.org/tutorials/keras/save_and_load#savedmodel_format)
 
